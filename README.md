@@ -1,54 +1,61 @@
 # ComfyUI-Krea2Moodboard
 
-krea.ai-style **moodboard / vibe transfer** for the open **Krea 2** model, as ComfyUI nodes.
-Companion to the [Forge Neo version](https://github.com/TdogCreations/forge-neo-krea2-toolkit) — same algorithms, same knobs.
+krea.ai-style **moodboard / vibe transfer** and **identity-preserving editing** for the open
+**Krea 2** model, as ComfyUI nodes. Companion to the
+[Forge Neo version](https://github.com/TdogCreations/forge-neo-krea2-toolkit) — same algorithms, same knobs.
 
 ## Nodes
 
-### Krea2 Moodboard Encode
-Reference images → style/vibe conditioning. Batch multiple images (Batch Images node) — they are
-**packed into ONE vision span** and blend into a joint vibe (repeated spans or "Picture N:" labels
-make K2 render N-panel grids; packing is the fix).
+### Krea 2 Moodboard
+One-node vibe transfer: prompt + reference image(s) in, conditioning out (replaces `CLIPTextEncode`
+on the positive). Knobs:
 
-- **strength** — 1.0 = raw reference; lower = purer extract. This is an *information* knob, not a
-  multiplier (per-token RMSNorms erase plain scaling).
-- **extract** — `style / vibe`: spans collapse toward a mean/±std statistics signature (palette,
-  texture contrast, mood; subjects fade). `subject / concept`: statistics are whitened away, token
-  structure (subjects/composition) survives — your prompt controls the look.
-- **reference_processing** — full image / quadrant crops / fine 4×4 tiles (tiles = subjects are
-  largely never encoded; strongest style-only setting).
+- **strength** — 1.0 = raw reference detail (layout/pose can leak); lower = purer extract. This is an
+  *information* knob, not a multiplier (per-token RMSNorms erase plain scaling).
+- **extract** — `style`: palette/lighting/texture/mood survive, subjects fade (spans collapse toward a
+  mean/±std statistics signature). `subject`: statistics are whitened away, subject/composition
+  survives and your prompt controls the look.
+- **reference_processing** — full / 2×2 crops / 4×4 tiles (tiles: subjects are largely never encoded —
+  strongest style-only setting).
 - **indirect** — reference tokens are deleted after the text encoder ran: the DiT never sees them,
-  style arrives only through prompt re-contextualization. Structurally cannot copy poses.
-- **style_directive** — declarative "style from the references, subjects from the text" sentence
+  style arrives only through prompt re-contextualization. Cannot copy poses; also the safe mode for
+  crops/multi-ref (deleted spans cannot grid).
+- **style_directive** — declarative "style from the refs, subjects from the text" sentence
   (auto-matches the extract mode).
 
-Recipes: Krea vibe = style extract, strength 0.5, fine tiles, directive on. Subject transfer =
-subject extract, strength 0.4–0.6, full image.
+### Krea 2 Moodboard Encode (packed)
+The multi-reference specialist: all references (or crops) are packed into **ONE vision span** —
+structurally grid-safe, references blend into a joint vibe. Same knobs. Use it standalone (with a
+prompt) or as the **`fuse_with` feeder** for the identity node (empty prompt).
 
-### Krea2 Moodboard + Edit Fusion
-Style from the moodboard **plus** identity from an edit source, in one conditioning — designed to
-compose with [ComfyUI-Krea2Edit](https://github.com/lbouaraba/comfyui-krea2edit):
+### Krea 2 Identity Edit
+Instruction-based identity-preserving editing with community **krea2_edit LoRAs**
+([krea2_identity_edit_v1](https://civitai.com/models/2761113)): *"create a photo of this person at a
+night market"* — same face, same outfit, relit. Dual conditioning: clean source latents ride
+in-context at RoPE frames 1..N (the LoRA's preserve-this signal) + the instruction is grounded on the
+source through Qwen3-VL. `grounding_px` = likeness↔obedience dial (768 balanced, 1024+ for people).
 
-```
-LoadImage(source) ─┬─ VAEEncode ─→ Krea2EditModelPatch(model, source_latent) ─→ KSampler
-                   └────────────→ Krea2MoodboardEditFusion(edit_source) ─→ positive
-LoadImages(style refs) ─────────→ Krea2MoodboardEditFusion(moodboard_images)
-```
+- Use **two** of these: positive (instruction) + negative (**empty prompt, same image**) — the
+  training unconditional, needed for CFG > 1 recipes.
+- **`fuse_with`** input: feed a Moodboard Encode conditioning to fuse style-from-moodboard with
+  identity-from-source. Fuse the POSITIVE only (style in the negative cancels under CFG).
+- Two-ref (experimental upstream): scene in `image`, subject in `image2`.
 
-The moodboard span gets the style effects; the edit grounding span stays raw (span-limited).
-Ground the **negative** too: an empty-instruction encode with the same source (Krea2Edit's grounded
-encode node, or this node with empty instruction and strength 1.0). krea2_edit LoRA at 1.0.
+## Example workflows (`workflows/`)
+
+- `krea2_moodboard_t2i.json` — basic vibe transfer text-to-image
+- `krea2_identity_edit_fusion.json` — identity edit + moodboard style fusion
+
+Settings baked in: ModelSamplingAuraFlow shift 1.15, Euler/Simple, Turbo 8 steps CFG 1 (removals:
+Raw checkpoint, 20–40 steps, CFG 3). Match the output AR to the source; generate ≤2MP.
 
 ## Requirements
 
-- ComfyUI with native Krea 2 support; the **qwen3vl_4b** text encoder (with vision weights) loaded
-  via CLIPLoader type `krea2`.
-- For the fusion node: [ComfyUI-Krea2Edit](https://github.com/lbouaraba/comfyui-krea2edit) +
-  the [krea2_identity_edit LoRA](https://civitai.com/models/2761113).
+- ComfyUI with native Krea 2 support; **qwen3vl_4b** text encoder (vision weights) via CLIPLoader
+  type `krea2`; `qwen_image_vae`.
+- For editing: a krea2_edit LoRA at strength 1.0 (LoraLoaderModelOnly).
 
 ## Install
-
-Clone into `custom_nodes` (or install via Manager once indexed):
 
 ```
 git clone https://github.com/TdogCreations/ComfyUI-Krea2Moodboard ComfyUI/custom_nodes/ComfyUI-Krea2Moodboard
@@ -56,10 +63,13 @@ git clone https://github.com/TdogCreations/ComfyUI-Krea2Moodboard ComfyUI/custom
 
 ## How it works / credits
 
-Packs references into a single vision span via a small additive patch to the Qwen3-VL preprocessing,
-and applies the moodboard effects inside Krea 2's `encode_token_weights` (pre-template-strip, exact
-span indices). No behavior changes when the nodes aren't used.
+Small additive patches at import: packed list-spans in Qwen3-VL preprocessing, moodboard effects
+inside Krea 2's `encode_token_weights`, and the in-context ref-latents branch on the Krea 2 DiT
+(`reference_latents` conditioning contract, like QwenImage/Flux edit models). All paths are
+bit-identical to stock when the nodes aren't used.
 
-Credits: [ComfyUI](https://github.com/comfyanonymous/ComfyUI) · [lbouaraba/ComfyUI-Krea2Edit](https://github.com/lbouaraba/comfyui-krea2edit)
-(Apache-2.0) · ethanfel & ostris (K2 vision-conditioning recipes) · Krea.ai (Krea 2, Community License).
-License: GPL-3.0 (ComfyUI-compatible). Not affiliated with Krea.ai.
+Credits: [ComfyUI](https://github.com/comfyanonymous/ComfyUI) ·
+[lbouaraba/ComfyUI-Krea2Edit](https://github.com/lbouaraba/comfyui-krea2edit) (Apache-2.0 — the
+identity-edit dual-conditioning recipe this reimplements) · ethanfel & ostris (K2 vision-conditioning
+recipes) · Krea.ai (Krea 2, Community License). License: GPL-3.0 (ComfyUI-compatible). Not affiliated
+with Krea.ai.

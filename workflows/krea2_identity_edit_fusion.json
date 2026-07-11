@@ -1,7 +1,82 @@
 {
- "last_node_id": 13,
- "last_link_id": 16,
+ "id": "0891c12a-a61e-479d-ac13-6beac46e7aef",
+ "revision": 0,
+ "last_node_id": 18,
+ "last_link_id": 21,
  "nodes": [
+  {
+   "id": 3,
+   "type": "CLIPLoader",
+   "pos": [
+    0,
+    180
+   ],
+   "size": [
+    330,
+    130
+   ],
+   "flags": {},
+   "order": 0,
+   "mode": 0,
+   "inputs": [
+    {
+     "localized_name": "clip_name",
+     "name": "clip_name",
+     "type": "COMBO",
+     "widget": {
+      "name": "clip_name"
+     },
+     "link": null
+    },
+    {
+     "localized_name": "type",
+     "name": "type",
+     "type": "COMBO",
+     "widget": {
+      "name": "type"
+     },
+     "link": null
+    },
+    {
+     "localized_name": "device",
+     "name": "device",
+     "shape": 7,
+     "type": "COMBO",
+     "widget": {
+      "name": "device"
+     },
+     "link": null
+    }
+   ],
+   "outputs": [
+    {
+     "localized_name": "CLIP",
+     "name": "CLIP",
+     "type": "CLIP",
+     "slot_index": 0,
+     "links": [
+      4,
+      5
+     ]
+    }
+   ],
+   "title": "Qwen3-VL encoder",
+   "properties": {
+    "cnr_id": "comfy-core",
+    "ver": "0.27.0",
+    "Node name for S&R": "CLIPLoader",
+    "ue_properties": {
+     "widget_ue_connectable": {},
+     "version": "7.8",
+     "input_ue_unconnectable": {}
+    }
+   },
+   "widgets_values": [
+    "qwen3vl_4b_fp8_scaled.safetensors",
+    "krea2",
+    "default"
+   ]
+  },
   {
    "id": 1,
    "type": "UNETLoader",
@@ -16,32 +91,59 @@
    "flags": {},
    "order": 1,
    "mode": 0,
-   "inputs": [],
-   "outputs": [
+   "inputs": [
     {
-     "name": "MODEL",
-     "type": "MODEL",
-     "links": [
-      1
-     ],
-     "slot_index": 0
+     "localized_name": "unet_name",
+     "name": "unet_name",
+     "type": "COMBO",
+     "widget": {
+      "name": "unet_name"
+     },
+     "link": null
+    },
+    {
+     "localized_name": "weight_dtype",
+     "name": "weight_dtype",
+     "type": "COMBO",
+     "widget": {
+      "name": "weight_dtype"
+     },
+     "link": null
     }
    ],
+   "outputs": [
+    {
+     "localized_name": "MODEL",
+     "name": "MODEL",
+     "type": "MODEL",
+     "slot_index": 0,
+     "links": [
+      1
+     ]
+    }
+   ],
+   "title": "Krea 2 checkpoint",
    "properties": {
-    "Node name for S&R": "UNETLoader"
+    "cnr_id": "comfy-core",
+    "ver": "0.27.0",
+    "Node name for S&R": "UNETLoader",
+    "ue_properties": {
+     "widget_ue_connectable": {},
+     "version": "7.8",
+     "input_ue_unconnectable": {}
+    }
    },
    "widgets_values": [
     "krea2Turbo_fp8.safetensors",
     "default"
-   ],
-   "title": "Krea 2 checkpoint"
+   ]
   },
   {
-   "id": 2,
-   "type": "LoraLoaderModelOnly",
+   "id": 4,
+   "type": "VAELoader",
    "pos": [
-    320,
-    0
+    0.7261654284189133,
+    363.0699694715992
    ],
    "size": [
     330,
@@ -52,313 +154,48 @@
    "mode": 0,
    "inputs": [
     {
-     "name": "model",
-     "type": "MODEL",
-     "link": 1
+     "localized_name": "vae_name",
+     "name": "vae_name",
+     "type": "COMBO",
+     "widget": {
+      "name": "vae_name"
+     },
+     "link": null
     }
    ],
    "outputs": [
     {
-     "name": "MODEL",
-     "type": "MODEL",
-     "links": [
-      2
-     ],
-     "slot_index": 0
-    }
-   ],
-   "properties": {
-    "Node name for S&R": "LoraLoaderModelOnly"
-   },
-   "widgets_values": [
-    "krea2_identity_edit_v1.safetensors",
-    1.0
-   ],
-   "title": "edit LoRA @ 1.0"
-  },
-  {
-   "id": 3,
-   "type": "CLIPLoader",
-   "pos": [
-    0,
-    180
-   ],
-   "size": [
-    330,
-    130
-   ],
-   "flags": {},
-   "order": 3,
-   "mode": 0,
-   "inputs": [],
-   "outputs": [
-    {
-     "name": "CLIP",
-     "type": "CLIP",
-     "links": [
-      4,
-      5
-     ],
-     "slot_index": 0
-    }
-   ],
-   "properties": {
-    "Node name for S&R": "CLIPLoader"
-   },
-   "widgets_values": [
-    "qwen3vl_4b_fp8_scaled.safetensors",
-    "krea2",
-    "default"
-   ],
-   "title": "Qwen3-VL encoder"
-  },
-  {
-   "id": 4,
-   "type": "VAELoader",
-   "pos": [
-    0,
-    350
-   ],
-   "size": [
-    330,
-    130
-   ],
-   "flags": {},
-   "order": 4,
-   "mode": 0,
-   "inputs": [],
-   "outputs": [
-    {
+     "localized_name": "VAE",
      "name": "VAE",
      "type": "VAE",
+     "slot_index": 0,
      "links": [
       6,
       7,
       8
-     ],
-     "slot_index": 0
+     ]
     }
    ],
    "properties": {
-    "Node name for S&R": "VAELoader"
+    "cnr_id": "comfy-core",
+    "ver": "0.27.0",
+    "Node name for S&R": "VAELoader",
+    "ue_properties": {
+     "widget_ue_connectable": {},
+     "version": "7.8",
+     "input_ue_unconnectable": {}
+    }
    },
    "widgets_values": [
     "qwen_image_vae.safetensors"
    ]
   },
   {
-   "id": 5,
-   "type": "LoadImage",
-   "pos": [
-    0,
-    510
-   ],
-   "size": [
-    330,
-    130
-   ],
-   "flags": {},
-   "order": 5,
-   "mode": 0,
-   "inputs": [],
-   "outputs": [
-    {
-     "name": "IMAGE",
-     "type": "IMAGE",
-     "links": [
-      9,
-      10
-     ],
-     "slot_index": 0
-    },
-    {
-     "name": "MASK",
-     "type": "MASK",
-     "links": [],
-     "slot_index": 1
-    }
-   ],
-   "properties": {
-    "Node name for S&R": "LoadImage"
-   },
-   "widgets_values": [
-    "person.png",
-    "image"
-   ],
-   "title": "Identity source"
-  },
-  {
-   "id": 6,
-   "type": "LoadImage",
-   "pos": [
-    0,
-    830
-   ],
-   "size": [
-    330,
-    130
-   ],
-   "flags": {},
-   "order": 6,
-   "mode": 0,
-   "inputs": [],
-   "outputs": [
-    {
-     "name": "IMAGE",
-     "type": "IMAGE",
-     "links": [
-      11
-     ],
-     "slot_index": 0
-    },
-    {
-     "name": "MASK",
-     "type": "MASK",
-     "links": [],
-     "slot_index": 1
-    }
-   ],
-   "properties": {
-    "Node name for S&R": "LoadImage"
-   },
-   "widgets_values": [
-    "style_reference.png",
-    "image"
-   ],
-   "title": "Moodboard image(s) (batch for several)"
-  },
-  {
-   "id": 7,
-   "type": "Krea2MoodboardIdentityFusion",
-   "pos": [
-    860,
-    320
-   ],
-   "size": [
-    330,
-    130
-   ],
-   "flags": {},
-   "order": 7,
-   "mode": 0,
-   "inputs": [
-    {
-     "name": "clip",
-     "type": "CLIP",
-     "link": 4
-    },
-    {
-     "name": "edit_source",
-     "type": "IMAGE",
-     "link": 9
-    },
-    {
-     "name": "moodboard_images",
-     "type": "IMAGE",
-     "link": 11
-    },
-    {
-     "name": "vae",
-     "type": "VAE",
-     "link": 6
-    },
-    {
-     "name": "edit_source2",
-     "type": "IMAGE",
-     "link": null
-    }
-   ],
-   "outputs": [
-    {
-     "name": "CONDITIONING",
-     "type": "CONDITIONING",
-     "links": [
-      12
-     ],
-     "slot_index": 0
-    }
-   ],
-   "properties": {
-    "Node name for S&R": "Krea2MoodboardIdentityFusion"
-   },
-   "widgets_values": [
-    "create a photo of this person at a night market",
-    0.5,
-    "style / vibe",
-    "full image",
-    true,
-    true,
-    384,
-    768
-   ],
-   "title": "Positive: fused instruction + style"
-  },
-  {
-   "id": 8,
-   "type": "Krea2IdentityEdit",
-   "pos": [
-    860,
-    650
-   ],
-   "size": [
-    330,
-    130
-   ],
-   "flags": {},
-   "order": 8,
-   "mode": 0,
-   "inputs": [
-    {
-     "name": "clip",
-     "type": "CLIP",
-     "link": 5
-    },
-    {
-     "name": "vae",
-     "type": "VAE",
-     "link": 7
-    },
-    {
-     "name": "image",
-     "type": "IMAGE",
-     "link": 10
-    },
-    {
-     "name": "image2",
-     "type": "IMAGE",
-     "link": null
-    },
-    {
-     "name": "fuse_with",
-     "type": "CONDITIONING",
-     "link": null
-    }
-   ],
-   "outputs": [
-    {
-     "name": "CONDITIONING",
-     "type": "CONDITIONING",
-     "links": [
-      13
-     ],
-     "slot_index": 0
-    }
-   ],
-   "properties": {
-    "Node name for S&R": "Krea2IdentityEdit"
-   },
-   "widgets_values": [
-    "",
-    768
-   ],
-   "title": "Negative: EMPTY prompt, same image, NO fuse"
-  },
-  {
    "id": 9,
    "type": "ModelSamplingAuraFlow",
    "pos": [
-    640,
-    40
+    829.4246803480086,
+    68.99361776333664
    ],
    "size": [
     330,
@@ -369,69 +206,480 @@
    "mode": 0,
    "inputs": [
     {
+     "localized_name": "model",
      "name": "model",
      "type": "MODEL",
      "link": 2
+    },
+    {
+     "localized_name": "shift",
+     "name": "shift",
+     "type": "FLOAT",
+     "widget": {
+      "name": "shift"
+     },
+     "link": null
     }
    ],
    "outputs": [
     {
+     "localized_name": "MODEL",
      "name": "MODEL",
      "type": "MODEL",
+     "slot_index": 0,
      "links": [
       3
-     ],
-     "slot_index": 0
+     ]
     }
    ],
    "properties": {
-    "Node name for S&R": "ModelSamplingAuraFlow"
+    "cnr_id": "comfy-core",
+    "ver": "0.27.0",
+    "Node name for S&R": "ModelSamplingAuraFlow",
+    "ue_properties": {
+     "widget_ue_connectable": {},
+     "version": "7.8",
+     "input_ue_unconnectable": {}
+    }
    },
    "widgets_values": [
     1.15
    ]
   },
   {
+   "id": 11,
+   "type": "KSampler",
+   "pos": [
+    861.0228609008294,
+    277.0927025362269
+   ],
+   "size": [
+    371.3637873592969,
+    309.19714645051647
+   ],
+   "flags": {},
+   "order": 10,
+   "mode": 0,
+   "inputs": [
+    {
+     "localized_name": "model",
+     "name": "model",
+     "type": "MODEL",
+     "link": 3
+    },
+    {
+     "localized_name": "positive",
+     "name": "positive",
+     "type": "CONDITIONING",
+     "link": 12
+    },
+    {
+     "localized_name": "negative",
+     "name": "negative",
+     "type": "CONDITIONING",
+     "link": 13
+    },
+    {
+     "localized_name": "latent_image",
+     "name": "latent_image",
+     "type": "LATENT",
+     "link": 14
+    },
+    {
+     "localized_name": "seed",
+     "name": "seed",
+     "type": "INT",
+     "widget": {
+      "name": "seed"
+     },
+     "link": null
+    },
+    {
+     "localized_name": "steps",
+     "name": "steps",
+     "type": "INT",
+     "widget": {
+      "name": "steps"
+     },
+     "link": null
+    },
+    {
+     "localized_name": "cfg",
+     "name": "cfg",
+     "type": "FLOAT",
+     "widget": {
+      "name": "cfg"
+     },
+     "link": null
+    },
+    {
+     "localized_name": "sampler_name",
+     "name": "sampler_name",
+     "type": "COMBO",
+     "widget": {
+      "name": "sampler_name"
+     },
+     "link": null
+    },
+    {
+     "localized_name": "scheduler",
+     "name": "scheduler",
+     "type": "COMBO",
+     "widget": {
+      "name": "scheduler"
+     },
+     "link": null
+    },
+    {
+     "localized_name": "denoise",
+     "name": "denoise",
+     "type": "FLOAT",
+     "widget": {
+      "name": "denoise"
+     },
+     "link": null
+    }
+   ],
+   "outputs": [
+    {
+     "localized_name": "LATENT",
+     "name": "LATENT",
+     "type": "LATENT",
+     "slot_index": 0,
+     "links": [
+      15
+     ]
+    }
+   ],
+   "title": "Turbo: 8/CFG1 (removals: Raw 20-40/CFG3)",
+   "properties": {
+    "cnr_id": "comfy-core",
+    "ver": "0.27.0",
+    "Node name for S&R": "KSampler",
+    "ue_properties": {
+     "widget_ue_connectable": {},
+     "version": "7.8",
+     "input_ue_unconnectable": {}
+    }
+   },
+   "widgets_values": [
+    413619120710047,
+    "randomize",
+    8,
+    1,
+    "euler",
+    "simple",
+    1
+   ]
+  },
+  {
    "id": 10,
    "type": "EmptySD3LatentImage",
    "pos": [
-    860,
-    940
+    423.3276636792328,
+    892.8178263042738
    ],
    "size": [
     330,
     130
    ],
    "flags": {},
-   "order": 10,
+   "order": 3,
    "mode": 0,
-   "inputs": [],
-   "outputs": [
+   "inputs": [
     {
-     "name": "LATENT",
-     "type": "LATENT",
-     "links": [
-      14
-     ],
-     "slot_index": 0
+     "localized_name": "width",
+     "name": "width",
+     "type": "INT",
+     "widget": {
+      "name": "width"
+     },
+     "link": null
+    },
+    {
+     "localized_name": "height",
+     "name": "height",
+     "type": "INT",
+     "widget": {
+      "name": "height"
+     },
+     "link": null
+    },
+    {
+     "localized_name": "batch_size",
+     "name": "batch_size",
+     "type": "INT",
+     "widget": {
+      "name": "batch_size"
+     },
+     "link": null
     }
    ],
+   "outputs": [
+    {
+     "localized_name": "LATENT",
+     "name": "LATENT",
+     "type": "LATENT",
+     "slot_index": 0,
+     "links": [
+      14
+     ]
+    }
+   ],
+   "title": "match the source aspect ratio!",
    "properties": {
-    "Node name for S&R": "EmptySD3LatentImage"
+    "cnr_id": "comfy-core",
+    "ver": "0.27.0",
+    "Node name for S&R": "EmptySD3LatentImage",
+    "ue_properties": {
+     "widget_ue_connectable": {},
+     "version": "7.8",
+     "input_ue_unconnectable": {}
+    }
    },
    "widgets_values": [
-    1024,
+    1264,
     1024,
     1
-   ],
-   "title": "match the source aspect ratio!"
+   ]
   },
   {
-   "id": 11,
-   "type": "KSampler",
+   "id": 7,
+   "type": "Krea2MoodboardIdentityFusion",
    "pos": [
-    1300,
-    320
+    426.7314954576017,
+    184.69359692095873
+   ],
+   "size": [
+    330,
+    356
+   ],
+   "flags": {},
+   "order": 7,
+   "mode": 0,
+   "inputs": [
+    {
+     "localized_name": "clip",
+     "name": "clip",
+     "type": "CLIP",
+     "link": 4
+    },
+    {
+     "localized_name": "edit_source",
+     "name": "edit_source",
+     "shape": 7,
+     "type": "IMAGE",
+     "link": 9
+    },
+    {
+     "localized_name": "moodboard_images",
+     "name": "moodboard_images",
+     "shape": 7,
+     "type": "IMAGE",
+     "link": 11
+    },
+    {
+     "localized_name": "vae",
+     "name": "vae",
+     "shape": 7,
+     "type": "VAE",
+     "link": 6
+    },
+    {
+     "localized_name": "edit_source2",
+     "name": "edit_source2",
+     "shape": 7,
+     "type": "IMAGE",
+     "link": null
+    },
+    {
+     "localized_name": "sources",
+     "name": "sources",
+     "shape": 7,
+     "type": "KREA2_SOURCES",
+     "link": null
+    },
+    {
+     "localized_name": "instruction",
+     "name": "instruction",
+     "type": "STRING",
+     "widget": {
+      "name": "instruction"
+     },
+     "link": null
+    },
+    {
+     "localized_name": "strength",
+     "name": "strength",
+     "type": "FLOAT",
+     "widget": {
+      "name": "strength"
+     },
+     "link": null
+    },
+    {
+     "localized_name": "extract",
+     "name": "extract",
+     "type": "COMBO",
+     "widget": {
+      "name": "extract"
+     },
+     "link": null
+    },
+    {
+     "localized_name": "reference_processing",
+     "name": "reference_processing",
+     "type": "COMBO",
+     "widget": {
+      "name": "reference_processing"
+     },
+     "link": null
+    },
+    {
+     "localized_name": "style_directive",
+     "name": "style_directive",
+     "type": "BOOLEAN",
+     "widget": {
+      "name": "style_directive"
+     },
+     "link": null
+    },
+    {
+     "localized_name": "indirect",
+     "name": "indirect",
+     "type": "BOOLEAN",
+     "widget": {
+      "name": "indirect"
+     },
+     "link": null
+    },
+    {
+     "localized_name": "budget_px",
+     "name": "budget_px",
+     "type": "INT",
+     "widget": {
+      "name": "budget_px"
+     },
+     "link": null
+    },
+    {
+     "localized_name": "grounding_px",
+     "name": "grounding_px",
+     "type": "INT",
+     "widget": {
+      "name": "grounding_px"
+     },
+     "link": null
+    }
+   ],
+   "outputs": [
+    {
+     "localized_name": "CONDITIONING",
+     "name": "CONDITIONING",
+     "type": "CONDITIONING",
+     "slot_index": 0,
+     "links": [
+      12
+     ]
+    }
+   ],
+   "title": "Positive: fused instruction + style",
+   "properties": {
+    "aux_id": "TdogCreations/ComfyUI-Krea2Moodboard",
+    "ver": "bba9ef2d9fa172f728f35149f8f23ebe9bf8fd57",
+    "Node name for S&R": "Krea2MoodboardIdentityFusion",
+    "ue_properties": {
+     "widget_ue_connectable": {},
+     "version": "7.8",
+     "input_ue_unconnectable": {}
+    }
+   },
+   "widgets_values": [
+    "create a photo of this person at a night market.",
+    1,
+    "subject / concept",
+    "full image",
+    true,
+    false,
+    384,
+    768
+   ]
+  },
+  {
+   "id": 5,
+   "type": "LoadImage",
+   "pos": [
+    -6.211007187218829,
+    574.9954745555618
+   ],
+   "size": [
+    330,
+    314
+   ],
+   "flags": {},
+   "order": 5,
+   "mode": 0,
+   "inputs": [
+    {
+     "localized_name": "image",
+     "name": "image",
+     "type": "COMBO",
+     "widget": {
+      "name": "image"
+     },
+     "link": null
+    },
+    {
+     "localized_name": "choose file to upload",
+     "name": "upload",
+     "type": "IMAGEUPLOAD",
+     "widget": {
+      "name": "upload"
+     },
+     "link": null
+    }
+   ],
+   "outputs": [
+    {
+     "localized_name": "IMAGE",
+     "name": "IMAGE",
+     "type": "IMAGE",
+     "slot_index": 0,
+     "links": [
+      9,
+      10
+     ]
+    },
+    {
+     "localized_name": "MASK",
+     "name": "MASK",
+     "type": "MASK",
+     "slot_index": 1,
+     "links": []
+    }
+   ],
+   "title": "Identity source",
+   "properties": {
+    "cnr_id": "comfy-core",
+    "ver": "0.27.0",
+    "Node name for S&R": "LoadImage",
+    "ue_properties": {
+     "widget_ue_connectable": {},
+     "version": "7.8",
+     "input_ue_unconnectable": {}
+    }
+   },
+   "widgets_values": [
+    "person.png",
+    "image"
+   ]
+  },
+  {
+   "id": 12,
+   "type": "VAEDecode",
+   "pos": [
+    1268.8088357639588,
+    284.87664352972473
    ],
    "size": [
     330,
@@ -442,71 +690,13 @@
    "mode": 0,
    "inputs": [
     {
-     "name": "model",
-     "type": "MODEL",
-     "link": 3
-    },
-    {
-     "name": "positive",
-     "type": "CONDITIONING",
-     "link": 12
-    },
-    {
-     "name": "negative",
-     "type": "CONDITIONING",
-     "link": 13
-    },
-    {
-     "name": "latent_image",
-     "type": "LATENT",
-     "link": 14
-    }
-   ],
-   "outputs": [
-    {
-     "name": "LATENT",
-     "type": "LATENT",
-     "links": [
-      15
-     ],
-     "slot_index": 0
-    }
-   ],
-   "properties": {
-    "Node name for S&R": "KSampler"
-   },
-   "widgets_values": [
-    0,
-    "randomize",
-    8,
-    1.0,
-    "euler",
-    "simple",
-    1.0
-   ],
-   "title": "Turbo: 8/CFG1 (removals: Raw 20-40/CFG3)"
-  },
-  {
-   "id": 12,
-   "type": "VAEDecode",
-   "pos": [
-    1660,
-    320
-   ],
-   "size": [
-    330,
-    130
-   ],
-   "flags": {},
-   "order": 12,
-   "mode": 0,
-   "inputs": [
-    {
+     "localized_name": "samples",
      "name": "samples",
      "type": "LATENT",
      "link": 15
     },
     {
+     "localized_name": "vae",
      "name": "vae",
      "type": "VAE",
      "link": 8
@@ -514,45 +704,316 @@
    ],
    "outputs": [
     {
+     "localized_name": "IMAGE",
      "name": "IMAGE",
      "type": "IMAGE",
+     "slot_index": 0,
      "links": [
       16
-     ],
-     "slot_index": 0
+     ]
     }
    ],
    "properties": {
-    "Node name for S&R": "VAEDecode"
-   }
+    "cnr_id": "comfy-core",
+    "ver": "0.27.0",
+    "Node name for S&R": "VAEDecode",
+    "ue_properties": {
+     "widget_ue_connectable": {},
+     "version": "7.8",
+     "input_ue_unconnectable": {}
+    }
+   },
+   "widgets_values": []
   },
   {
    "id": 13,
    "type": "SaveImage",
    "pos": [
-    1890,
-    320
+    1632.145669266653,
+    285.7376866890197
+   ],
+   "size": [
+    585.1432995304181,
+    627.5873846590639
+   ],
+   "flags": {},
+   "order": 12,
+   "mode": 0,
+   "inputs": [
+    {
+     "localized_name": "images",
+     "name": "images",
+     "type": "IMAGE",
+     "link": 16
+    },
+    {
+     "localized_name": "filename_prefix",
+     "name": "filename_prefix",
+     "type": "STRING",
+     "widget": {
+      "name": "filename_prefix"
+     },
+     "link": null
+    }
+   ],
+   "outputs": [
+    {
+     "localized_name": "images",
+     "name": "images",
+     "type": "IMAGE",
+     "links": null
+    }
+   ],
+   "properties": {
+    "cnr_id": "comfy-core",
+    "ver": "0.27.0",
+    "Node name for S&R": "SaveImage",
+    "ue_properties": {
+     "widget_ue_connectable": {},
+     "version": "7.8",
+     "input_ue_unconnectable": {}
+    }
+   },
+   "widgets_values": [
+    "krea2_identity_fusion"
+   ]
+  },
+  {
+   "id": 8,
+   "type": "Krea2IdentityEdit",
+   "pos": [
+    419.5490252741202,
+    610.7330889086202
+   ],
+   "size": [
+    356.95078125,
+    212
+   ],
+   "flags": {},
+   "order": 8,
+   "mode": 0,
+   "inputs": [
+    {
+     "localized_name": "clip",
+     "name": "clip",
+     "type": "CLIP",
+     "link": 5
+    },
+    {
+     "localized_name": "vae",
+     "name": "vae",
+     "shape": 7,
+     "type": "VAE",
+     "link": 7
+    },
+    {
+     "localized_name": "image",
+     "name": "image",
+     "shape": 7,
+     "type": "IMAGE",
+     "link": 10
+    },
+    {
+     "localized_name": "image2",
+     "name": "image2",
+     "shape": 7,
+     "type": "IMAGE",
+     "link": null
+    },
+    {
+     "localized_name": "fuse_with",
+     "name": "fuse_with",
+     "shape": 7,
+     "type": "CONDITIONING",
+     "link": null
+    },
+    {
+     "localized_name": "sources",
+     "name": "sources",
+     "shape": 7,
+     "type": "KREA2_SOURCES",
+     "link": null
+    },
+    {
+     "localized_name": "prompt",
+     "name": "prompt",
+     "type": "STRING",
+     "widget": {
+      "name": "prompt"
+     },
+     "link": null
+    },
+    {
+     "localized_name": "grounding_px",
+     "name": "grounding_px",
+     "shape": 7,
+     "type": "INT",
+     "widget": {
+      "name": "grounding_px"
+     },
+     "link": null
+    }
+   ],
+   "outputs": [
+    {
+     "localized_name": "CONDITIONING",
+     "name": "CONDITIONING",
+     "type": "CONDITIONING",
+     "slot_index": 0,
+     "links": [
+      13
+     ]
+    }
+   ],
+   "title": "Negative: EMPTY prompt, same image, NO fuse",
+   "properties": {
+    "aux_id": "TdogCreations/ComfyUI-Krea2Moodboard",
+    "ver": "bba9ef2d9fa172f728f35149f8f23ebe9bf8fd57",
+    "Node name for S&R": "Krea2IdentityEdit",
+    "ue_properties": {
+     "widget_ue_connectable": {},
+     "version": "7.8",
+     "input_ue_unconnectable": {}
+    }
+   },
+   "widgets_values": [
+    "",
+    768
+   ]
+  },
+  {
+   "id": 6,
+   "type": "LoadImage",
+   "pos": [
+    -9.848113679697946,
+    972.252665964576
+   ],
+   "size": [
+    330,
+    314.0000000000001
+   ],
+   "flags": {},
+   "order": 4,
+   "mode": 0,
+   "inputs": [
+    {
+     "localized_name": "image",
+     "name": "image",
+     "type": "COMBO",
+     "widget": {
+      "name": "image"
+     },
+     "link": null
+    },
+    {
+     "localized_name": "choose file to upload",
+     "name": "upload",
+     "type": "IMAGEUPLOAD",
+     "widget": {
+      "name": "upload"
+     },
+     "link": null
+    }
+   ],
+   "outputs": [
+    {
+     "localized_name": "IMAGE",
+     "name": "IMAGE",
+     "type": "IMAGE",
+     "slot_index": 0,
+     "links": [
+      11
+     ]
+    },
+    {
+     "localized_name": "MASK",
+     "name": "MASK",
+     "type": "MASK",
+     "slot_index": 1,
+     "links": []
+    }
+   ],
+   "title": "Moodboard image(s) (batch for several)",
+   "properties": {
+    "cnr_id": "comfy-core",
+    "ver": "0.27.0",
+    "Node name for S&R": "LoadImage",
+    "ue_properties": {
+     "widget_ue_connectable": {},
+     "version": "7.8",
+     "input_ue_unconnectable": {}
+    }
+   },
+   "widgets_values": [
+    "style_reference.png",
+    "image"
+   ]
+  },
+  {
+   "id": 2,
+   "type": "LoraLoaderModelOnly",
+   "pos": [
+    421.310592719192,
+    -8.751482843770535
    ],
    "size": [
     330,
     130
    ],
    "flags": {},
-   "order": 13,
+   "order": 6,
    "mode": 0,
    "inputs": [
     {
-     "name": "images",
-     "type": "IMAGE",
-     "link": 16
+     "localized_name": "model",
+     "name": "model",
+     "type": "MODEL",
+     "link": 1
+    },
+    {
+     "localized_name": "lora_name",
+     "name": "lora_name",
+     "type": "COMBO",
+     "widget": {
+      "name": "lora_name"
+     },
+     "link": null
+    },
+    {
+     "localized_name": "strength_model",
+     "name": "strength_model",
+     "type": "FLOAT",
+     "widget": {
+      "name": "strength_model"
+     },
+     "link": null
     }
    ],
-   "outputs": [],
+   "outputs": [
+    {
+     "localized_name": "MODEL",
+     "name": "MODEL",
+     "type": "MODEL",
+     "slot_index": 0,
+     "links": [
+      2
+     ]
+    }
+   ],
+   "title": "edit LoRA @ 1.0",
    "properties": {
-    "Node name for S&R": "SaveImage"
+    "cnr_id": "comfy-core",
+    "ver": "0.27.0",
+    "Node name for S&R": "LoraLoaderModelOnly",
+    "ue_properties": {
+     "widget_ue_connectable": {},
+     "version": "7.8",
+     "input_ue_unconnectable": {}
+    }
    },
    "widgets_values": [
-    "krea2_identity_fusion"
+    "krea2_identity_edit_v1.safetensors",
+    1
    ]
   }
  ],
@@ -688,6 +1149,16 @@
  ],
  "groups": [],
  "config": {},
- "extra": {},
+ "extra": {
+  "ue_links": [],
+  "ds": {
+   "scale": 0.48864795918368,
+   "offset": [
+    325.97708218062184,
+    311.4175325256651
+   ]
+  },
+  "links_added_by_ue": []
+ },
  "version": 0.4
 }

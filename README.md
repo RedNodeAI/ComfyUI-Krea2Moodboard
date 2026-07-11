@@ -51,6 +51,13 @@ source through Qwen3-VL. `grounding_px` = likeness↔obedience dial (768 balance
   identity-from-source. Fuse the POSITIVE only (style in the negative cancels under CFG).
 - Two-ref (experimental upstream): scene in `image`, subject in `image2`.
 
+### Krea2 Edit Source Chain
+Chainable multi-reference input: each node appends one image; connect chains into the `sources`
+input on Identity Edit or the Fusion node (frames 3..N after `image`/`image2`). Unlimited by the
+architecture — but the edit LoRA trained on 1–2 references, so 3+ tends to blend identities (the
+LoRA author's multi-person recipe is chaining *edit passes* instead: place person A, then run a
+second edit adding person B from their reference).
+
 ## Example workflows (`workflows/`)
 
 - `krea2_moodboard_t2i.json` — basic vibe transfer text-to-image

@@ -162,6 +162,7 @@ class Krea2IdentityEdit:
                 "grounding_px": ("INT", {"default": 768, "min": 0, "max": 4096, "step": 32,
                                          "tooltip": "Cap on the longest side fed to Qwen3-VL (the identity LoRA trained with 384-768px). 0 = never resize."}),
                 "fuse_with": ("CONDITIONING", {"tooltip": "Optional conditioning to fuse in front of this one (e.g. Krea 2 Moodboard for scene/style vibe). Its token rows are prepended; this node's identity reference latents are kept. Matches the Neo moodboard+edit fusion layout."}),
+                "sources": ("KREA2_SOURCES", {"tooltip": "chained sources (Krea2 Edit Source Chain) — appended after image/image2 as frames 3..N. 3+ refs is beyond the LoRA's training; identities may blend."}),
             },
         }
 
@@ -169,11 +170,15 @@ class Krea2IdentityEdit:
     FUNCTION = "encode"
     CATEGORY = "conditioning/krea2"
 
-    def encode(self, clip, prompt, vae=None, image=None, image2=None, grounding_px=768, fuse_with=None):
+    def encode(self, clip, prompt, vae=None, image=None, image2=None, grounding_px=768, fuse_with=None, sources=None):
+        all_sources = [image, image2] + (list(sources) if sources else [])
+        n_refs = sum(1 for s in all_sources if s is not None)
+        if n_refs > 2:
+            print(f"[Krea2 Identity Edit] {n_refs} references - the edit LoRA trained on 1-2; expect identity blending beyond that")
         images_vl = []
         ref_latents = []
         vision_prompt = ""
-        for img in (image, image2):
+        for img in all_sources:
             if img is None:
                 continue
             samples = img.movedim(-1, 1)

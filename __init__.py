@@ -269,6 +269,33 @@ class Krea2MoodboardEncode:
         return (conditioning,)
 
 
+class Krea2EditSourceChain:
+    """Chainable identity/reference source. Each node appends one image to the list; connect the
+    output to the next chain node's `sources` (or to the `sources` input on Krea 2 Identity Edit /
+    Moodboard + Identity Fusion). Sources become in-context frames 1..N in chain order.
+
+    NOTE: the krea2_identity_edit LoRA trained on 1-2 references — with 3+ the plumbing works but
+    identities may blend (the LoRA author's multi-person recipe is chaining EDIT PASSES instead:
+    place person A, then run a second edit adding person B)."""
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {"image": ("IMAGE",)},
+            "optional": {"sources": ("KREA2_SOURCES", {"tooltip": "previous chain link"})},
+        }
+
+    RETURN_TYPES = ("KREA2_SOURCES",)
+    FUNCTION = "chain"
+    CATEGORY = "conditioning/krea2"
+    DESCRIPTION = "Appends one reference image to a chainable source list for multi-reference identity editing."
+
+    def chain(self, image, sources=None):
+        out = list(sources) if sources else []
+        out.append(image)
+        return (out,)
+
+
 class Krea2MoodboardIdentityFusion:
     """Single-encode fusion: moodboard style + identity-edit source in ONE LLM pass, exactly like
     the Forge Neo implementation. Because the instruction and the edit grounding attend the
@@ -299,6 +326,7 @@ class Krea2MoodboardIdentityFusion:
                 "moodboard_images": ("IMAGE", {"tooltip": "style references (batch for several). Not connected = pure identity-edit mode."}),
                 "vae": ("VAE", {"tooltip": "connect to attach the in-context identity latents (required for actual editing)"}),
                 "edit_source2": ("IMAGE", {"tooltip": "2nd reference for two-ref LoRAs (scene first, subject second)"}),
+                "sources": ("KREA2_SOURCES", {"tooltip": "chained sources (Krea2 Edit Source Chain) — appended after edit_source/edit_source2 as frames 3..N. 3+ refs is beyond the LoRA's training; identities may blend."}),
             },
         }
 
@@ -307,7 +335,7 @@ class Krea2MoodboardIdentityFusion:
     CATEGORY = "conditioning/krea2"
     DESCRIPTION = "Moodboard style + identity edit fused in a single encode (Neo-parity). Both image inputs are optional: ID only = plain identity edit, moodboard only = plain vibe transfer, both = fusion. Positive only; negative = Krea 2 Identity Edit with empty prompt + same image."
 
-    def encode(self, clip, instruction, strength, extract, reference_processing, style_directive, indirect, budget_px, grounding_px, edit_source=None, moodboard_images=None, vae=None, edit_source2=None):
+    def encode(self, clip, instruction, strength, extract, reference_processing, style_directive, indirect, budget_px, grounding_px, edit_source=None, moodboard_images=None, vae=None, edit_source2=None, sources=None):
         import comfy.utils
         import node_helpers
 
@@ -327,11 +355,16 @@ class Krea2MoodboardIdentityFusion:
         if refs and style_directive:
             directive = SUBJECT_DIRECTIVE if extract_key == "subject" else STYLE_DIRECTIVE
 
-        # edit side (optional): grounding images + in-context ref latents (order: scene, subject)
+        # edit side (optional): grounding images + in-context ref latents (order: scene, subject,
+        # then chained sources as frames 3..N)
+        all_sources = [edit_source, edit_source2] + (list(sources) if sources else [])
+        n_refs = sum(1 for s in all_sources if s is not None)
+        if n_refs > 2:
+            print(f"[Krea2 Fusion] {n_refs} identity references - the edit LoRA trained on 1-2; expect identity blending beyond that")
         edit_images = []
         ref_latents = []
         edit_blocks = ""
-        for img in (edit_source, edit_source2):
+        for img in all_sources:
             if img is None:
                 continue
             samples = img[:1].movedim(-1, 1)
@@ -373,10 +406,12 @@ NODE_CLASS_MAPPINGS = {
     "Krea2MoodboardEncode": Krea2MoodboardEncode,
     "Krea2IdentityEdit": Krea2IdentityEdit,
     "Krea2MoodboardIdentityFusion": Krea2MoodboardIdentityFusion,
+    "Krea2EditSourceChain": Krea2EditSourceChain,
 }
 NODE_DISPLAY_NAME_MAPPINGS = {
     "Krea2Moodboard": "Krea 2 Moodboard",
     "Krea2MoodboardEncode": "Krea 2 Moodboard Encode (packed)",
     "Krea2IdentityEdit": "Krea 2 Identity Edit",
     "Krea2MoodboardIdentityFusion": "Krea 2 Moodboard + Identity Fusion",
+    "Krea2EditSourceChain": "Krea2 Edit Source Chain",
 }

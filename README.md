@@ -78,7 +78,7 @@ bypass switches. Requires these custom node packs (all installable via ComfyUI-M
 | ComfyUI_Comfyroll_CustomNodes | prompt combine, aspect ratio, text replace |
 | ComfyUI-JoyCaption | image -> prompt captioning (downloads its captioner model on first run) |
 | ComfyUI-Custom-Scripts (pythongosssss) | text display |
-| comfyui-ollama-describer | text transformer node |
+| comfyui-ollama-describer | Text Transformer (regex caption cleanup) — needs the `ollama` pip package to load (Manager installs it); NO Ollama server required |
 | ComfyUI-Image-Saver | sampler selector |
 | comfyui_layerstyle | seed node |
 | ComfyUI-WhiteRabbit | batch Lanczos resize |

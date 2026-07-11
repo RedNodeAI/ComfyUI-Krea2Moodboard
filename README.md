@@ -1,7 +1,7 @@
 # ComfyUI-Krea2Moodboard
 
 krea.ai-style **moodboard / vibe transfer** for the open **Krea 2** model, as ComfyUI nodes.
-Companion to the [Forge Neo version](<NEO_REPO_URL>) — same algorithms, same knobs.
+Companion to the [Forge Neo version](https://github.com/TdogCreations/forge-neo-krea2-toolkit) — same algorithms, same knobs.
 
 ## Nodes
 
@@ -51,7 +51,7 @@ encode node, or this node with empty instruction and strength 1.0). krea2_edit L
 Clone into `custom_nodes` (or install via Manager once indexed):
 
 ```
-git clone <THIS_REPO_URL> ComfyUI/custom_nodes/ComfyUI-Krea2Moodboard
+git clone https://github.com/TdogCreations/ComfyUI-Krea2Moodboard ComfyUI/custom_nodes/ComfyUI-Krea2Moodboard
 ```
 
 ## How it works / credits

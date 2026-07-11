@@ -260,6 +260,7 @@ class Krea2MoodboardEncode:
         else:
             text = VISION_BLOCK + directive + prompt
 
+        print(f"[Krea2 Moodboard Encode] encoding ({len(refs)} ref(s)): {text[:120]!r}")
         set_flags(clip, strength=float(strength), hide=bool(indirect), extract=extract_key, span_limit=None)
         try:
             tokens = clip.tokenize(text, images=[refs], llama_template=KREA2_TEMPLATE)
@@ -389,6 +390,7 @@ class Krea2MoodboardIdentityFusion:
         else:
             span_limit = 0
 
+        print(f"[Krea2 Fusion] encoding ({len(refs)} mb ref(s), {len(edit_images)} edit ref(s)): {text[:120]!r}")
         set_flags(clip, strength=float(strength), hide=bool(indirect), extract=extract_key, span_limit=span_limit)
         try:
             tokens = clip.tokenize(text, images=images, llama_template=KREA2_TEMPLATE) if images else clip.tokenize(text, llama_template=KREA2_TEMPLATE)

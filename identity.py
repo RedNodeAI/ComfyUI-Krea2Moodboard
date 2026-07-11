@@ -194,6 +194,7 @@ class Krea2IdentityEdit:
                 ref_latents.append(vae.encode(img[:, :, :, :3]))
             vision_prompt += VISION_BLOCK
 
+        print(f"[Krea2 Identity Edit] encoding ({len(images_vl)} ref(s)): {(vision_prompt + prompt)[:120]!r}")
         tokens = clip.tokenize(vision_prompt + prompt, images=images_vl, llama_template=KREA2_TEMPLATE)
         conditioning = clip.encode_from_tokens_scheduled(tokens)
         if ref_latents:

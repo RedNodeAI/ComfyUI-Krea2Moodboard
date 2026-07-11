@@ -285,8 +285,6 @@ class Krea2MoodboardIdentityFusion:
                 "clip": ("CLIP",),
                 "instruction": ("STRING", {"multiline": True, "default": "",
                                            "tooltip": "the edit instruction, e.g. 'create a photo of this person at a night market'"}),
-                "edit_source": ("IMAGE", {"tooltip": "identity source image"}),
-                "moodboard_images": ("IMAGE", {"tooltip": "style references (batch for several)"}),
                 "strength": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.05}),
                 "extract": (["style / vibe", "subject / concept"],),
                 "reference_processing": (REF_MODES,),
@@ -297,6 +295,8 @@ class Krea2MoodboardIdentityFusion:
                                          "tooltip": "longest-side cap for the edit source fed to the encoder"}),
             },
             "optional": {
+                "edit_source": ("IMAGE", {"tooltip": "identity source image. Not connected = pure moodboard mode."}),
+                "moodboard_images": ("IMAGE", {"tooltip": "style references (batch for several). Not connected = pure identity-edit mode."}),
                 "vae": ("VAE", {"tooltip": "connect to attach the in-context identity latents (required for actual editing)"}),
                 "edit_source2": ("IMAGE", {"tooltip": "2nd reference for two-ref LoRAs (scene first, subject second)"}),
             },
@@ -305,27 +305,29 @@ class Krea2MoodboardIdentityFusion:
     RETURN_TYPES = ("CONDITIONING",)
     FUNCTION = "encode"
     CATEGORY = "conditioning/krea2"
-    DESCRIPTION = "Moodboard style + identity edit fused in a single encode (Neo-parity). Positive only; negative = Krea 2 Identity Edit with empty prompt + same image."
+    DESCRIPTION = "Moodboard style + identity edit fused in a single encode (Neo-parity). Both image inputs are optional: ID only = plain identity edit, moodboard only = plain vibe transfer, both = fusion. Positive only; negative = Krea 2 Identity Edit with empty prompt + same image."
 
-    def encode(self, clip, instruction, edit_source, moodboard_images, strength, extract, reference_processing, style_directive, indirect, budget_px, grounding_px, vae=None, edit_source2=None):
+    def encode(self, clip, instruction, strength, extract, reference_processing, style_directive, indirect, budget_px, grounding_px, edit_source=None, moodboard_images=None, vae=None, edit_source2=None):
         import comfy.utils
         import node_helpers
 
-        # moodboard side: crops + area budget, packed into one span
-        refs = [moodboard_images[i:i + 1] for i in range(moodboard_images.shape[0])]
-        crops_n = 4 if "4x4" in reference_processing else 2 if "2x2" in reference_processing else 0
-        total = int(budget_px) * int(budget_px)
-        if crops_n:
-            refs = expand_style_crops(refs, n=crops_n)
-            total = total // (3 if crops_n == 2 else 12)
-        refs = [resize_area(r, total, never_upscale=(budget_px >= 1024)) for r in refs]
+        # moodboard side (optional): crops + area budget, packed into one span
+        refs = []
+        if moodboard_images is not None and moodboard_images.shape[0] > 0:
+            refs = [moodboard_images[i:i + 1] for i in range(moodboard_images.shape[0])]
+            crops_n = 4 if "4x4" in reference_processing else 2 if "2x2" in reference_processing else 0
+            total = int(budget_px) * int(budget_px)
+            if crops_n:
+                refs = expand_style_crops(refs, n=crops_n)
+                total = total // (3 if crops_n == 2 else 12)
+            refs = [resize_area(r, total, never_upscale=(budget_px >= 1024)) for r in refs]
 
         extract_key = "subject" if extract.startswith("subject") else "style"
         directive = ""
-        if style_directive:
+        if refs and style_directive:
             directive = SUBJECT_DIRECTIVE if extract_key == "subject" else STYLE_DIRECTIVE
 
-        # edit side: grounding images + in-context ref latents (training-matched order: scene, subject)
+        # edit side (optional): grounding images + in-context ref latents (order: scene, subject)
         edit_images = []
         ref_latents = []
         edit_blocks = ""
@@ -342,12 +344,21 @@ class Krea2MoodboardIdentityFusion:
                 ref_latents.append(vae.encode(img[:1, :, :, :3]))
             edit_blocks += VISION_BLOCK
 
-        text = VISION_BLOCK + directive + edit_blocks + instruction
-        images = [refs] + edit_images  # span 1 = packed moodboard; spans 2.. = edit grounding
+        mb_block = VISION_BLOCK if refs else ""
+        text = mb_block + directive + edit_blocks + instruction
+        images = ([refs] if refs else []) + edit_images  # span 1 = packed moodboard (if any); then edit grounding
 
-        set_flags(clip, strength=float(strength), hide=bool(indirect), extract=extract_key, span_limit=1)
+        # Moodboard effects apply only to the leading moodboard span. With edit grounding present,
+        # limit to that one span; moodboard-only mode covers all (its single) spans; edit-only or
+        # text-only mode disables effects entirely so the grounding stays raw.
+        if refs:
+            span_limit = 1 if edit_images else None
+        else:
+            span_limit = 0
+
+        set_flags(clip, strength=float(strength), hide=bool(indirect), extract=extract_key, span_limit=span_limit)
         try:
-            tokens = clip.tokenize(text, images=images, llama_template=KREA2_TEMPLATE)
+            tokens = clip.tokenize(text, images=images, llama_template=KREA2_TEMPLATE) if images else clip.tokenize(text, llama_template=KREA2_TEMPLATE)
             conditioning = clip.encode_from_tokens_scheduled(tokens)
         finally:
             set_flags(clip)

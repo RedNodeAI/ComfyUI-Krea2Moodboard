@@ -35,6 +35,8 @@ instruction and the edit grounding attend the moodboard span inside the encoder,
 (default ON) genuinely works: moodboard rows are deleted after encoding, people in your style refs
 cannot appear in the output, and the style still transfers. Wire it as the KSampler positive
 (connect `vae`!), keep the negative a Krea 2 Identity Edit with an empty prompt + the same source.
+Both image inputs are **optional**: connect only `edit_source` for a plain identity edit, only
+`moodboard_images` for plain vibe transfer, both for fusion — one node covers all three modes.
 
 ### Krea 2 Identity Edit
 Instruction-based identity-preserving editing with community **krea2_edit LoRAs**

@@ -269,13 +269,103 @@ class Krea2MoodboardEncode:
         return (conditioning,)
 
 
+class Krea2MoodboardIdentityFusion:
+    """Single-encode fusion: moodboard style + identity-edit source in ONE LLM pass, exactly like
+    the Forge Neo implementation. Because the instruction and the edit grounding attend the
+    moodboard span inside the encoder, `indirect` genuinely works here (unlike feeding a separate
+    moodboard encode into `fuse_with`, where deleting rows deletes all image influence).
+
+    Use for the KSampler POSITIVE; keep the negative a Krea 2 Identity Edit with an EMPTY prompt
+    and the same source image. Requires a krea2_edit LoRA at strength 1.0 on the model."""
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "clip": ("CLIP",),
+                "instruction": ("STRING", {"multiline": True, "default": "",
+                                           "tooltip": "the edit instruction, e.g. 'create a photo of this person at a night market'"}),
+                "edit_source": ("IMAGE", {"tooltip": "identity source image"}),
+                "moodboard_images": ("IMAGE", {"tooltip": "style references (batch for several)"}),
+                "strength": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.05}),
+                "extract": (["style / vibe", "subject / concept"],),
+                "reference_processing": (REF_MODES,),
+                "style_directive": ("BOOLEAN", {"default": True}),
+                "indirect": ("BOOLEAN", {"default": True, "tooltip": "delete moodboard rows after encoding; style survives via in-encoder attention. Safest when style refs contain people."}),
+                "budget_px": ("INT", {"default": 384, "min": 128, "max": 1536, "step": 64}),
+                "grounding_px": ("INT", {"default": 768, "min": 0, "max": 2048, "step": 32,
+                                         "tooltip": "longest-side cap for the edit source fed to the encoder"}),
+            },
+            "optional": {
+                "vae": ("VAE", {"tooltip": "connect to attach the in-context identity latents (required for actual editing)"}),
+                "edit_source2": ("IMAGE", {"tooltip": "2nd reference for two-ref LoRAs (scene first, subject second)"}),
+            },
+        }
+
+    RETURN_TYPES = ("CONDITIONING",)
+    FUNCTION = "encode"
+    CATEGORY = "conditioning/krea2"
+    DESCRIPTION = "Moodboard style + identity edit fused in a single encode (Neo-parity). Positive only; negative = Krea 2 Identity Edit with empty prompt + same image."
+
+    def encode(self, clip, instruction, edit_source, moodboard_images, strength, extract, reference_processing, style_directive, indirect, budget_px, grounding_px, vae=None, edit_source2=None):
+        import comfy.utils
+        import node_helpers
+
+        # moodboard side: crops + area budget, packed into one span
+        refs = [moodboard_images[i:i + 1] for i in range(moodboard_images.shape[0])]
+        crops_n = 4 if "4x4" in reference_processing else 2 if "2x2" in reference_processing else 0
+        total = int(budget_px) * int(budget_px)
+        if crops_n:
+            refs = expand_style_crops(refs, n=crops_n)
+            total = total // (3 if crops_n == 2 else 12)
+        refs = [resize_area(r, total, never_upscale=(budget_px >= 1024)) for r in refs]
+
+        extract_key = "subject" if extract.startswith("subject") else "style"
+        directive = ""
+        if style_directive:
+            directive = SUBJECT_DIRECTIVE if extract_key == "subject" else STYLE_DIRECTIVE
+
+        # edit side: grounding images + in-context ref latents (training-matched order: scene, subject)
+        edit_images = []
+        ref_latents = []
+        edit_blocks = ""
+        for img in (edit_source, edit_source2):
+            if img is None:
+                continue
+            samples = img[:1].movedim(-1, 1)
+            h, w = samples.shape[2], samples.shape[3]
+            if grounding_px and max(h, w) > grounding_px:
+                scale_by = grounding_px / max(h, w)
+                samples = comfy.utils.common_upscale(samples, round(w * scale_by), round(h * scale_by), "area", "disabled")
+            edit_images.append(samples.movedim(1, -1)[:, :, :, :3])
+            if vae is not None:
+                ref_latents.append(vae.encode(img[:1, :, :, :3]))
+            edit_blocks += VISION_BLOCK
+
+        text = VISION_BLOCK + directive + edit_blocks + instruction
+        images = [refs] + edit_images  # span 1 = packed moodboard; spans 2.. = edit grounding
+
+        set_flags(clip, strength=float(strength), hide=bool(indirect), extract=extract_key, span_limit=1)
+        try:
+            tokens = clip.tokenize(text, images=images, llama_template=KREA2_TEMPLATE)
+            conditioning = clip.encode_from_tokens_scheduled(tokens)
+        finally:
+            set_flags(clip)
+
+        if ref_latents:
+            conditioning = node_helpers.conditioning_set_values(conditioning, {"reference_latents": ref_latents}, append=True)
+        return (conditioning,)
+
+
 NODE_CLASS_MAPPINGS = {
     "Krea2Moodboard": Krea2Moodboard,
     "Krea2MoodboardEncode": Krea2MoodboardEncode,
     "Krea2IdentityEdit": Krea2IdentityEdit,
+    "Krea2MoodboardIdentityFusion": Krea2MoodboardIdentityFusion,
 }
 NODE_DISPLAY_NAME_MAPPINGS = {
     "Krea2Moodboard": "Krea 2 Moodboard",
     "Krea2MoodboardEncode": "Krea 2 Moodboard Encode (packed)",
     "Krea2IdentityEdit": "Krea 2 Identity Edit",
+    "Krea2MoodboardIdentityFusion": "Krea 2 Moodboard + Identity Fusion",
 }

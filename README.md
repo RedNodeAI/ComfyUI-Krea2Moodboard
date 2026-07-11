@@ -26,7 +26,15 @@ on the positive). Knobs:
 ### Krea 2 Moodboard Encode (packed)
 The multi-reference specialist: all references (or crops) are packed into **ONE vision span** —
 structurally grid-safe, references blend into a joint vibe. Same knobs. Use it standalone (with a
-prompt) or as the **`fuse_with` feeder** for the identity node (empty prompt).
+prompt) or as the **`fuse_with` feeder** for the identity node (empty prompt, `indirect` OFF —
+fuse_with concatenates a separate encode, so deleted rows would carry no image influence).
+
+### Krea 2 Moodboard + Identity Fusion
+The recommended way to combine style refs with an identity edit: **one node, one encode** — the
+instruction and the edit grounding attend the moodboard span inside the encoder, so `indirect`
+(default ON) genuinely works: moodboard rows are deleted after encoding, people in your style refs
+cannot appear in the output, and the style still transfers. Wire it as the KSampler positive
+(connect `vae`!), keep the negative a Krea 2 Identity Edit with an empty prompt + the same source.
 
 ### Krea 2 Identity Edit
 Instruction-based identity-preserving editing with community **krea2_edit LoRAs**

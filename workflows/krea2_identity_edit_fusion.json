@@ -1,6 +1,6 @@
 {
- "last_node_id": 14,
- "last_link_id": 18,
+ "last_node_id": 13,
+ "last_link_id": 16,
  "nodes": [
   {
    "id": 1,
@@ -97,8 +97,7 @@
      "type": "CLIP",
      "links": [
       4,
-      5,
-      6
+      5
      ],
      "slot_index": 0
     }
@@ -133,9 +132,9 @@
      "name": "VAE",
      "type": "VAE",
      "links": [
+      6,
       7,
-      8,
-      9
+      8
      ],
      "slot_index": 0
     }
@@ -167,8 +166,8 @@
      "name": "IMAGE",
      "type": "IMAGE",
      "links": [
-      10,
-      11
+      9,
+      10
      ],
      "slot_index": 0
     },
@@ -208,7 +207,7 @@
      "name": "IMAGE",
      "type": "IMAGE",
      "links": [
-      12
+      11
      ],
      "slot_index": 0
     },
@@ -230,10 +229,10 @@
   },
   {
    "id": 7,
-   "type": "Krea2MoodboardEncode",
+   "type": "Krea2MoodboardIdentityFusion",
    "pos": [
-    420,
-    790
+    860,
+    320
    ],
    "size": [
     330,
@@ -249,9 +248,24 @@
      "link": 4
     },
     {
-     "name": "images",
+     "name": "edit_source",
      "type": "IMAGE",
-     "link": 12
+     "link": 9
+    },
+    {
+     "name": "moodboard_images",
+     "type": "IMAGE",
+     "link": 11
+    },
+    {
+     "name": "vae",
+     "type": "VAE",
+     "link": 6
+    },
+    {
+     "name": "edit_source2",
+     "type": "IMAGE",
+     "link": null
     }
    ],
    "outputs": [
@@ -259,32 +273,32 @@
      "name": "CONDITIONING",
      "type": "CONDITIONING",
      "links": [
-      13
+      12
      ],
      "slot_index": 0
     }
    ],
    "properties": {
-    "Node name for S&R": "Krea2MoodboardEncode"
+    "Node name for S&R": "Krea2MoodboardIdentityFusion"
    },
    "widgets_values": [
-    "",
+    "create a photo of this person at a night market",
     0.5,
     "style / vibe",
     "full image",
     true,
     true,
-    "before prompt",
-    384
+    384,
+    768
    ],
-   "title": "Moodboard for fusion (EMPTY prompt, indirect ON)"
+   "title": "Positive: fused instruction + style"
   },
   {
    "id": 8,
    "type": "Krea2IdentityEdit",
    "pos": [
     860,
-    320
+    650
    ],
    "size": [
     330,
@@ -317,66 +331,6 @@
     {
      "name": "fuse_with",
      "type": "CONDITIONING",
-     "link": 13
-    }
-   ],
-   "outputs": [
-    {
-     "name": "CONDITIONING",
-     "type": "CONDITIONING",
-     "links": [
-      14
-     ],
-     "slot_index": 0
-    }
-   ],
-   "properties": {
-    "Node name for S&R": "Krea2IdentityEdit"
-   },
-   "widgets_values": [
-    "create a photo of this person at a night market",
-    768
-   ],
-   "title": "Positive: instruction"
-  },
-  {
-   "id": 9,
-   "type": "Krea2IdentityEdit",
-   "pos": [
-    860,
-    650
-   ],
-   "size": [
-    330,
-    130
-   ],
-   "flags": {},
-   "order": 9,
-   "mode": 0,
-   "inputs": [
-    {
-     "name": "clip",
-     "type": "CLIP",
-     "link": 6
-    },
-    {
-     "name": "vae",
-     "type": "VAE",
-     "link": 8
-    },
-    {
-     "name": "image",
-     "type": "IMAGE",
-     "link": 11
-    },
-    {
-     "name": "image2",
-     "type": "IMAGE",
-     "link": null
-    },
-    {
-     "name": "fuse_with",
-     "type": "CONDITIONING",
      "link": null
     }
    ],
@@ -385,7 +339,7 @@
      "name": "CONDITIONING",
      "type": "CONDITIONING",
      "links": [
-      15
+      13
      ],
      "slot_index": 0
     }
@@ -400,7 +354,7 @@
    "title": "Negative: EMPTY prompt, same image, NO fuse"
   },
   {
-   "id": 10,
+   "id": 9,
    "type": "ModelSamplingAuraFlow",
    "pos": [
     640,
@@ -411,7 +365,7 @@
     130
    ],
    "flags": {},
-   "order": 10,
+   "order": 9,
    "mode": 0,
    "inputs": [
     {
@@ -438,7 +392,7 @@
    ]
   },
   {
-   "id": 11,
+   "id": 10,
    "type": "EmptySD3LatentImage",
    "pos": [
     860,
@@ -449,7 +403,7 @@
     130
    ],
    "flags": {},
-   "order": 11,
+   "order": 10,
    "mode": 0,
    "inputs": [],
    "outputs": [
@@ -457,7 +411,7 @@
      "name": "LATENT",
      "type": "LATENT",
      "links": [
-      16
+      14
      ],
      "slot_index": 0
     }
@@ -473,7 +427,7 @@
    "title": "match the source aspect ratio!"
   },
   {
-   "id": 12,
+   "id": 11,
    "type": "KSampler",
    "pos": [
     1300,
@@ -484,7 +438,7 @@
     130
    ],
    "flags": {},
-   "order": 12,
+   "order": 11,
    "mode": 0,
    "inputs": [
     {
@@ -495,17 +449,17 @@
     {
      "name": "positive",
      "type": "CONDITIONING",
-     "link": 14
+     "link": 12
     },
     {
      "name": "negative",
      "type": "CONDITIONING",
-     "link": 15
+     "link": 13
     },
     {
      "name": "latent_image",
      "type": "LATENT",
-     "link": 16
+     "link": 14
     }
    ],
    "outputs": [
@@ -513,7 +467,7 @@
      "name": "LATENT",
      "type": "LATENT",
      "links": [
-      17
+      15
      ],
      "slot_index": 0
     }
@@ -533,10 +487,50 @@
    "title": "Turbo: 8/CFG1 (removals: Raw 20-40/CFG3)"
   },
   {
-   "id": 13,
+   "id": 12,
    "type": "VAEDecode",
    "pos": [
     1660,
+    320
+   ],
+   "size": [
+    330,
+    130
+   ],
+   "flags": {},
+   "order": 12,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "samples",
+     "type": "LATENT",
+     "link": 15
+    },
+    {
+     "name": "vae",
+     "type": "VAE",
+     "link": 8
+    }
+   ],
+   "outputs": [
+    {
+     "name": "IMAGE",
+     "type": "IMAGE",
+     "links": [
+      16
+     ],
+     "slot_index": 0
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "VAEDecode"
+   }
+  },
+  {
+   "id": 13,
+   "type": "SaveImage",
+   "pos": [
+    1890,
     320
    ],
    "size": [
@@ -548,49 +542,9 @@
    "mode": 0,
    "inputs": [
     {
-     "name": "samples",
-     "type": "LATENT",
-     "link": 17
-    },
-    {
-     "name": "vae",
-     "type": "VAE",
-     "link": 9
-    }
-   ],
-   "outputs": [
-    {
-     "name": "IMAGE",
-     "type": "IMAGE",
-     "links": [
-      18
-     ],
-     "slot_index": 0
-    }
-   ],
-   "properties": {
-    "Node name for S&R": "VAEDecode"
-   }
-  },
-  {
-   "id": 14,
-   "type": "SaveImage",
-   "pos": [
-    1890,
-    320
-   ],
-   "size": [
-    330,
-    130
-   ],
-   "flags": {},
-   "order": 14,
-   "mode": 0,
-   "inputs": [
-    {
      "name": "images",
      "type": "IMAGE",
-     "link": 18
+     "link": 16
     }
    ],
    "outputs": [],
@@ -615,15 +569,15 @@
    2,
    2,
    0,
-   10,
+   9,
    0,
    "MODEL"
   ],
   [
    3,
-   10,
+   9,
    0,
-   12,
+   11,
    0,
    "MODEL"
   ],
@@ -645,11 +599,11 @@
   ],
   [
    6,
+   4,
+   0,
+   7,
    3,
-   0,
-   9,
-   0,
-   "CLIP"
+   "VAE"
   ],
   [
    7,
@@ -663,17 +617,17 @@
    8,
    4,
    0,
-   9,
+   12,
    1,
    "VAE"
   ],
   [
    9,
-   4,
+   5,
    0,
-   13,
+   7,
    1,
-   "VAE"
+   "IMAGE"
   ],
   [
    10,
@@ -685,65 +639,49 @@
   ],
   [
    11,
-   5,
+   6,
    0,
-   9,
+   7,
    2,
    "IMAGE"
   ],
   [
    12,
-   6,
-   0,
    7,
+   0,
+   11,
    1,
-   "IMAGE"
+   "CONDITIONING"
   ],
   [
    13,
-   7,
-   0,
    8,
-   4,
+   0,
+   11,
+   2,
    "CONDITIONING"
   ],
   [
    14,
-   8,
+   10,
    0,
-   12,
-   1,
-   "CONDITIONING"
+   11,
+   3,
+   "LATENT"
   ],
   [
    15,
-   9,
-   0,
-   12,
-   2,
-   "CONDITIONING"
-  ],
-  [
-   16,
    11,
    0,
    12,
-   3,
+   0,
    "LATENT"
   ],
   [
-   17,
+   16,
    12,
    0,
    13,
-   0,
-   "LATENT"
-  ],
-  [
-   18,
-   13,
-   0,
-   14,
    0,
    "IMAGE"
   ]

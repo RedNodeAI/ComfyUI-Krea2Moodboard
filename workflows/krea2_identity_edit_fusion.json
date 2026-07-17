@@ -585,7 +585,7 @@
    ],
    "title": "Positive: fused instruction + style",
    "properties": {
-    "aux_id": "TdogCreations/ComfyUI-Krea2Moodboard",
+    "aux_id": "RedNodeAI/ComfyUI-Krea2Moodboard",
     "ver": "bba9ef2d9fa172f728f35149f8f23ebe9bf8fd57",
     "Node name for S&R": "Krea2MoodboardIdentityFusion",
     "ue_properties": {
@@ -867,7 +867,7 @@
    ],
    "title": "Negative: EMPTY prompt, same image, NO fuse",
    "properties": {
-    "aux_id": "TdogCreations/ComfyUI-Krea2Moodboard",
+    "aux_id": "RedNodeAI/ComfyUI-Krea2Moodboard",
     "ver": "bba9ef2d9fa172f728f35149f8f23ebe9bf8fd57",
     "Node name for S&R": "Krea2IdentityEdit",
     "ue_properties": {

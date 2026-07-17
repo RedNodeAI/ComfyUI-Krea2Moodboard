@@ -2,7 +2,7 @@
 
 krea.ai-style **moodboard / vibe transfer** and **identity-preserving editing** for the open
 **Krea 2** model, as ComfyUI nodes. Companion to the
-[Forge Neo version](https://github.com/TdogCreations/forge-neo-krea2-toolkit) — same algorithms, same knobs.
+[Forge Neo version](https://github.com/RedNodeAI/forge-neo-krea2-toolkit) — same algorithms, same knobs.
 
 ## Nodes
 
@@ -98,7 +98,7 @@ Raw checkpoint, 20–40 steps, CFG 3). Match the output AR to the source; genera
 ## Install
 
 ```
-git clone https://github.com/TdogCreations/ComfyUI-Krea2Moodboard ComfyUI/custom_nodes/ComfyUI-Krea2Moodboard
+git clone https://github.com/RedNodeAI/ComfyUI-Krea2Moodboard ComfyUI/custom_nodes/ComfyUI-Krea2Moodboard
 ```
 
 ## How it works / credits

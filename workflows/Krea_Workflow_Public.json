@@ -1816,7 +1816,7 @@
     }
    ],
    "properties": {
-    "aux_id": "TdogCreations/ComfyUI-Krea2Moodboard",
+    "aux_id": "RedNodeAI/ComfyUI-Krea2Moodboard",
     "ver": "0505591bc122da2aa4506a55a17dc50194a12e67",
     "Node name for S&R": "Krea2EditSourceChain",
     "ue_properties": {
@@ -2010,7 +2010,7 @@
     }
    ],
    "properties": {
-    "aux_id": "TdogCreations/ComfyUI-Krea2Moodboard",
+    "aux_id": "RedNodeAI/ComfyUI-Krea2Moodboard",
     "ver": "0505591bc122da2aa4506a55a17dc50194a12e67",
     "Node name for S&R": "Krea2EditSourceChain",
     "ue_properties": {
@@ -2481,7 +2481,7 @@
    ],
    "title": "Positive: fused instruction + style",
    "properties": {
-    "aux_id": "TdogCreations/ComfyUI-Krea2Moodboard",
+    "aux_id": "RedNodeAI/ComfyUI-Krea2Moodboard",
     "ver": "bba9ef2d9fa172f728f35149f8f23ebe9bf8fd57",
     "Node name for S&R": "Krea2MoodboardIdentityFusion",
     "ue_properties": {
@@ -4655,7 +4655,7 @@
       ],
       "title": "Negative (KEEP PROMPT EMPTY, same image)",
       "properties": {
-       "aux_id": "TdogCreations/ComfyUI-Krea2Moodboard",
+       "aux_id": "RedNodeAI/ComfyUI-Krea2Moodboard",
        "ver": "810884677989a8d69ea2f7228bcd8215efbc1c31",
        "Node name for S&R": "Krea2IdentityEdit",
        "ue_properties": {

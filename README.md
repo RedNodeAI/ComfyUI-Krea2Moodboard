@@ -37,19 +37,39 @@ cannot appear in the output, and the style still transfers. Wire it as the KSamp
 (connect `vae`!), keep the negative a Krea 2 Identity Edit with an empty prompt + the same source.
 Both image inputs are **optional**: connect only `edit_source` for a plain identity edit, only
 `moodboard_images` for plain vibe transfer, both for fusion — one node covers all three modes.
+The identity-side dials from the edit node are here too: `ref_boost`/`ref_boost_a` (they boost the
+identity refs only — the moodboard span is unaffected) and `target_latent` + `fit_mode` (v1.2 fit
+geometry for the edit sources).
 
 ### Krea 2 Identity Edit
 Instruction-based identity-preserving editing with community **krea2_edit LoRAs**
-([krea2_identity_edit_v1](https://civitai.com/models/2761113)): *"create a photo of this person at a
-night market"* — same face, same outfit, relit. Dual conditioning: clean source latents ride
-in-context at RoPE frames 1..N (the LoRA's preserve-this signal) + the instruction is grounded on the
-source through Qwen3-VL. `grounding_px` = likeness↔obedience dial (768 balanced, 1024+ for people).
+([krea2_identity_edit](https://civitai.com/models/2761113), weights also on
+[HF conradlocke/krea2-identity-edit](https://huggingface.co/conradlocke/krea2-identity-edit)):
+*"create a photo of this person at a night market"* — same face, same outfit, relit. Dual
+conditioning: clean source latents ride in-context at RoPE frames 1..N (the LoRA's preserve-this
+signal) + the instruction is grounded on the source through Qwen3-VL. `grounding_px` =
+likeness↔obedience dial (768 balanced, 1024+ for people).
 
 - Use **two** of these: positive (instruction) + negative (**empty prompt, same image**) — the
   training unconditional, needed for CFG > 1 recipes.
+- **`ref_boost`** — reference-fidelity dial: multiplies target→reference attention (additive
+  logit bias). 1.0 = off; >1 pulls harder toward the reference's appearance (the v1.2 LoRA author
+  suggests 2–6); <1 loosens. Applies to the LAST ref (= the subject); `ref_boost_a` is the same
+  dial for the scene ref in two-ref workflows. Set on the positive node only.
+- **`target_latent` + `fit_mode`** — connect your (empty) sampling latent to enable the v1.2
+  **fit geometry**: refs are fitted in *pixel space* to the output resolution before VAE-encoding.
+  Fixes blurry results from resolution mismatches (latents are never resized) and removes the old
+  "match the source aspect ratio" requirement (AR-preserving fit at a centered stride-1 offset,
+  matching v1.2 training). `crop (legacy)` keeps the v1/v1.1 geometry for older weights. With
+  CFG > 1, connect the same latent to the negative node too so both passes share one geometry.
 - **`fuse_with`** input: feed a Moodboard Encode conditioning to fuse style-from-moodboard with
   identity-from-source. Fuse the POSITIVE only (style in the negative cancels under CFG).
 - Two-ref (experimental upstream): scene in `image`, subject in `image2`.
+
+**v1.2 LoRA notes** (`krea2_identity_edit_v1_2.safetensors`): adds head/face swap, inpaint/outpaint
+grounding, try-on, character sheets, and a 1024 high-res pass; on Turbo run 8–12 steps (8 favors
+composition, 12 favors face detail). The `fit` default matches how v1.2 was trained; use
+`crop (legacy)` with v1/v1.1 weights.
 
 ### Krea2 Edit Source Chain
 Chainable multi-reference input: each node appends one image; connect chains into the `sources`
@@ -87,7 +107,9 @@ bypass switches. Requires these custom node packs (all installable via ComfyUI-M
 The two lean example workflows above need NONE of these — core nodes + this pack only.
 
 Settings baked in: ModelSamplingAuraFlow shift 1.15, Euler/Simple, Turbo 8 steps CFG 1 (removals:
-Raw checkpoint, 20–40 steps, CFG 3). Match the output AR to the source; generate ≤2MP.
+Raw checkpoint, 20–40 steps, CFG 3). With the v1.2 LoRA, 8–12 steps (8 = composition, 12 = face
+detail). Generate ≤2MP. Matching the output AR to the source is no longer required when
+`target_latent` is connected (fit geometry) — but staying close still gives the best results.
 
 ## Requirements
 

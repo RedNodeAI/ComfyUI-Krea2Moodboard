@@ -24,7 +24,7 @@ import comfy.text_encoders.krea2
 import comfy.text_encoders.qwen3vl
 from comfy.text_encoders.krea2 import KREA2_TEMPLATE, Krea2TEModel
 
-from .identity import Krea2IdentityEdit
+from .identity import Krea2IdentityEdit, fit_image_to_latent
 from .moodboard import Krea2Moodboard
 
 STYLE_DIRECTIVE = (
@@ -328,6 +328,13 @@ class Krea2MoodboardIdentityFusion:
                 "vae": ("VAE", {"tooltip": "connect to attach the in-context identity latents (required for actual editing)"}),
                 "edit_source2": ("IMAGE", {"tooltip": "2nd reference for two-ref LoRAs (scene first, subject second)"}),
                 "sources": ("KREA2_SOURCES", {"tooltip": "chained sources (Krea2 Edit Source Chain) — appended after edit_source/edit_source2 as frames 3..N. 3+ refs is beyond the LoRA's training; identities may blend."}),
+                "ref_boost": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1000.0, "step": 0.01, "round": 0.001,
+                                        "tooltip": "reference-fidelity dial: multiplies target->reference attention for the LAST identity ref (the subject). 1.0 = off; >1 pulls harder toward the reference (the v1.2 edit-LoRA author suggests 2-6). Positive only — the moodboard span is unaffected."}),
+                "ref_boost_a": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1000.0, "step": 0.01, "round": 0.001,
+                                          "tooltip": "same dial for the earlier identity refs (the scene in two-ref workflows). No effect single-ref. 1.0 = off"}),
+                "target_latent": ("LATENT", {"tooltip": "connect your (empty) sampling latent to enable the v1.2 'fit' geometry: identity refs are fitted in PIXEL space to the output resolution before VAE-encoding — fixes blur from resolution mismatch and removes the match-the-aspect-ratio requirement. With CFG > 1, connect the same latent to the negative edit node too."}),
+                "fit_mode": (["fit", "crop (legacy)"], {"default": "fit",
+                             "tooltip": "how identity refs fit a mismatched output AR (needs target_latent + vae): fit = resample to the target grid at a centered offset (v1.2-trained geometry); crop (legacy) = center-crop to the target AR then resize (v1/v1.1 geometry, for older weights)."}),
             },
         }
 
@@ -336,7 +343,8 @@ class Krea2MoodboardIdentityFusion:
     CATEGORY = "conditioning/krea2"
     DESCRIPTION = "Moodboard style + identity edit fused in a single encode (Neo-parity). Both image inputs are optional: ID only = plain identity edit, moodboard only = plain vibe transfer, both = fusion. Positive only; negative = Krea 2 Identity Edit with empty prompt + same image."
 
-    def encode(self, clip, instruction, strength, extract, reference_processing, style_directive, indirect, budget_px, grounding_px, edit_source=None, moodboard_images=None, vae=None, edit_source2=None, sources=None):
+    def encode(self, clip, instruction, strength, extract, reference_processing, style_directive, indirect, budget_px, grounding_px, edit_source=None, moodboard_images=None, vae=None, edit_source2=None, sources=None,
+               ref_boost=1.0, ref_boost_a=1.0, target_latent=None, fit_mode="fit"):
         import comfy.utils
         import node_helpers
 
@@ -375,7 +383,14 @@ class Krea2MoodboardIdentityFusion:
                 samples = comfy.utils.common_upscale(samples, round(w * scale_by), round(h * scale_by), "area", "disabled")
             edit_images.append(samples.movedim(1, -1)[:, :, :, :3])
             if vae is not None:
-                ref_latents.append(vae.encode(img[:1, :, :, :3]))
+                if target_latent is not None:
+                    # v1.2 pixel-space path: fit the IMAGE to the output grid, then encode —
+                    # the DiT never resizes these latents (blur-proof, AR-safe).
+                    lh, lw = target_latent["samples"].shape[-2:]
+                    mode = "crop" if fit_mode.startswith("crop") else "fit"
+                    ref_latents.append(vae.encode(fit_image_to_latent(img[:1], lh, lw, mode)))
+                else:
+                    ref_latents.append(vae.encode(img[:1, :, :, :3]))
             edit_blocks += VISION_BLOCK
 
         mb_block = VISION_BLOCK if refs else ""
@@ -399,7 +414,12 @@ class Krea2MoodboardIdentityFusion:
             set_flags(clip)
 
         if ref_latents:
-            conditioning = node_helpers.conditioning_set_values(conditioning, {"reference_latents": ref_latents}, append=True)
+            extra = {"reference_latents": ref_latents,
+                     "reference_fit": [target_latent is not None] * len(ref_latents)}
+            boosts = [ref_boost_a] * (len(ref_latents) - 1) + [ref_boost]
+            if any(b != 1.0 for b in boosts):
+                extra["reference_boosts"] = boosts
+            conditioning = node_helpers.conditioning_set_values(conditioning, extra, append=True)
         return (conditioning,)
 
 

@@ -26,6 +26,12 @@ PRESETS = {
     "style only": dict(transfer="style", reference_processing="full image", style_directive=True,
                        hide_style_refs=True, style_detail_px=768, likeness_vs_obedience=768,
                        reference_fidelity=1.0, scene_fidelity=1.0, fit_mode="fit"),
+    # user-discovered recipe: garment/product photos in moodboard_style transfer onto the subject
+    # with no captioning — subject-extract keeps garment STRUCTURE, 768px budget resolves patterns.
+    # Works best with style_strength at 1.0.
+    "outfit transfer": dict(transfer="subject", reference_processing="full image", style_directive=False,
+                            hide_style_refs=False, style_detail_px=768, likeness_vs_obedience=768,
+                            reference_fidelity=1.0, scene_fidelity=1.0, fit_mode="fit"),
 }
 
 
@@ -92,7 +98,7 @@ class Krea2RedNode:
                 "instruction": ("STRING", {"multiline": True, "dynamicPrompts": True,
                                "tooltip": "what to make, e.g. 'create a photo of this person at a night market'"}),
                 "preset": (list(PRESETS), {"default": "balanced",
-                           "tooltip": "balanced = identity + style fusion; max identity = strongest face lock; style only = pure vibe transfer. Connect a RedNode Settings node to take full manual control instead."}),
+                           "tooltip": "balanced = identity + style fusion; max identity = strongest face lock; style only = pure vibe transfer; outfit transfer = put the clothes from moodboard_style onto the subject (set style_strength to 1.0). Connect a RedNode Settings node to take full manual control instead."}),
                 "style_strength": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.05,
                                    "tooltip": "how much of the style references survives: 1.0 = raw reference detail, lower = purer style extract"}),
             },

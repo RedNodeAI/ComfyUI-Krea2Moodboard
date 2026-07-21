@@ -456,10 +456,13 @@ class Krea2MoodboardIdentityFusion:
 
 
 from .rednode import Krea2RedNode, Krea2RedNodeSettings  # noqa: E402  (needs the fusion class above)
+from .prompt_tools import RedNodePromptCombine, RedNodePromptTextbox  # noqa: E402
 
 NODE_CLASS_MAPPINGS = {
     "Krea2RedNode": Krea2RedNode,
     "Krea2RedNodeSettings": Krea2RedNodeSettings,
+    "RedNodePromptCombine": RedNodePromptCombine,
+    "RedNodePromptTextbox": RedNodePromptTextbox,
     "Krea2Moodboard": Krea2Moodboard,
     "Krea2MoodboardEncode": Krea2MoodboardEncode,
     "Krea2IdentityEdit": Krea2IdentityEdit,
@@ -470,6 +473,8 @@ NODE_CLASS_MAPPINGS = {
 NODE_DISPLAY_NAME_MAPPINGS = {
     "Krea2RedNode": "Krea 2 RedNode (Moodboard + Identity)",
     "Krea2RedNodeSettings": "Krea 2 RedNode Settings (Advanced)",
+    "RedNodePromptCombine": "RedNode Prompt Combine",
+    "RedNodePromptTextbox": "RedNode Prompt Textbox (add)",
     "Krea2Moodboard": "Krea 2 Moodboard",
     "Krea2MoodboardEncode": "Krea 2 Moodboard Encode (packed)",
     "Krea2IdentityEdit": "Krea 2 Identity Edit",

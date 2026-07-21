@@ -98,7 +98,7 @@ class Krea2RedNode:
                 "instruction": ("STRING", {"multiline": True, "dynamicPrompts": True,
                                "tooltip": "what to make, e.g. 'create a photo of this person at a night market'"}),
                 "preset": (list(PRESETS), {"default": "balanced",
-                           "tooltip": "balanced = identity + style fusion; max identity = strongest face lock; style only = pure vibe transfer; outfit transfer = put the clothes from moodboard_style onto the subject (set style_strength to 1.0). Connect a RedNode Settings node to take full manual control instead."}),
+                           "tooltip": "balanced = identity + style fusion; max identity = strongest face lock; style only = pure vibe transfer; outfit transfer = put the clothes from moodboard_style onto the subject (style_strength 1.0; for strict garment construction ALSO feed the garment into scene_image and drop style_strength to 0.8). Connect a RedNode Settings node to take full manual control instead."}),
                 "style_strength": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.05,
                                    "tooltip": "how much of the style references survives: 1.0 = raw reference detail, lower = purer style extract"}),
             },

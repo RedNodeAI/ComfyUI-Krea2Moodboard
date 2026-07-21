@@ -97,11 +97,12 @@ class Krea2RedNode:
                                    "tooltip": "how much of the style references survives: 1.0 = raw reference detail, lower = purer style extract"}),
             },
             "optional": {
-                "vae": ("VAE", {"tooltip": "required when an identity source is connected"}),
-                "identity_source": ("IMAGE", {"tooltip": "the person/subject to preserve"}),
-                "identity_source_2": ("IMAGE", {"tooltip": "2nd reference for two-ref edit LoRAs (scene first, subject second)"}),
-                "style_references": ("IMAGE", {"tooltip": "style/vibe references (batch for several)"}),
-                "target_latent": ("LATENT", {"tooltip": "connect your sampling latent: enables the v1.2 fit geometry on BOTH outputs"}),
+                "vae": ("VAE", {"tooltip": "required when a subject or scene image is connected"}),
+                "subject_image": ("IMAGE", {"tooltip": "the person/subject to preserve — the face you want kept"}),
+                "scene_image": ("IMAGE", {"tooltip": "optional environment/scene reference to place the subject into (two-ref edit LoRAs; ordering is handled for you)"}),
+                "moodboard_style": ("IMAGE", {"tooltip": "style/vibe reference images — batch several for a joint moodboard"}),
+                "extra_subjects": ("KREA2_SOURCES", {"tooltip": "chain more references (Krea2 Edit Source Chain); 3+ is beyond the edit LoRA's training"}),
+                "output_latent": ("LATENT", {"tooltip": "connect the SAME empty latent you feed the sampler — enables the v1.2 blur-proof fit geometry on both outputs"}),
                 "settings": (SETTINGS_TYPE, {"tooltip": "optional Krea 2 RedNode Settings node — replaces the preset entirely when connected"}),
             },
         }
@@ -112,8 +113,9 @@ class Krea2RedNode:
     CATEGORY = "conditioning/krea2"
     DESCRIPTION = "Moodboard + identity edit in one node, with a matched grounded negative output. Presets for the common modes; plug in RedNode Settings for full control."
 
-    def encode(self, clip, instruction, preset, style_strength, vae=None, identity_source=None,
-               identity_source_2=None, style_references=None, target_latent=None, settings=None):
+    def encode(self, clip, instruction, preset, style_strength, vae=None, subject_image=None,
+               scene_image=None, moodboard_style=None, extra_subjects=None, output_latent=None,
+               settings=None):
         import sys
         pkg = sys.modules[__package__]
 
@@ -126,17 +128,24 @@ class Krea2RedNode:
         args = _fusion_args(cfg)
         args["strength"] = float(style_strength)
 
+        # training order for two-ref edit LoRAs is scene first, subject second — handled here
+        # so users never have to know it.
+        if scene_image is not None:
+            ref1, ref2 = scene_image, subject_image
+        else:
+            ref1, ref2 = subject_image, None
+
         (positive,) = pkg.Krea2MoodboardIdentityFusion().encode(
             clip=clip, instruction=instruction,
-            edit_source=identity_source, edit_source2=identity_source_2,
-            moodboard_images=style_references, vae=vae,
-            sources=None, target_latent=target_latent, **args)
+            edit_source=ref1, edit_source2=ref2,
+            moodboard_images=moodboard_style, vae=vae,
+            sources=extra_subjects, target_latent=output_latent, **args)
 
         from .identity import Krea2IdentityEdit
         (negative,) = Krea2IdentityEdit().encode(
             clip=clip, prompt="", vae=vae,
-            image=identity_source, image2=identity_source_2,
+            image=ref1, image2=ref2, sources=extra_subjects,
             grounding_px=args["grounding_px"],
-            target_latent=target_latent, fit_mode=args["fit_mode"])
+            target_latent=output_latent, fit_mode=args["fit_mode"])
 
         return (positive, negative)

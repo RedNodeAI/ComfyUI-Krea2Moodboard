@@ -27,11 +27,11 @@ PRESETS = {
                        hide_style_refs=True, style_detail_px=768, likeness_vs_obedience=768,
                        reference_fidelity=1.0, scene_fidelity=1.0, fit_mode="fit"),
     # user-discovered recipe: garment/product photos in moodboard_style transfer onto the subject
-    # with no captioning — subject-extract keeps garment STRUCTURE, 768px budget resolves patterns.
-    # Works best with style_strength at 1.0.
-    "outfit transfer": dict(transfer="subject", reference_processing="full image", style_directive=False,
-                            hide_style_refs=False, style_detail_px=768, likeness_vs_obedience=768,
-                            reference_fidelity=1.0, scene_fidelity=1.0, fit_mode="fit"),
+    # with no captioning. 1280px vision budget resolves fabric patterns; style extract + directive
+    # with fidelity boosts 2.0 keeps the face while the garment carries over. style_strength 1.0.
+    "outfit transfer": dict(transfer="style", reference_processing="full image", style_directive=True,
+                            hide_style_refs=False, style_detail_px=1280, likeness_vs_obedience=768,
+                            reference_fidelity=2.0, scene_fidelity=2.0, fit_mode="fit"),
 }
 
 

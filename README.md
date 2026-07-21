@@ -4,6 +4,9 @@ krea.ai-style **moodboard / vibe transfer** and **identity-preserving editing** 
 **Krea 2** model, as ComfyUI nodes. Companion to the
 [Forge Neo version](https://github.com/RedNodeAI/forge-neo-krea2-toolkit) — same algorithms, same knobs.
 
+**On Civitai** (release zips + showcase):
+[civitai.com/models/2794961](https://civitai.com/models/2794961/krea-2-moodboard-identity-edit-comfyui-nodes-forge-neo)
+
 ## Nodes
 
 ### Krea 2 Moodboard

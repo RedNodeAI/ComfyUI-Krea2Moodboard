@@ -133,11 +133,11 @@ class Krea2Moodboard:
             "required": {
                 "clip": ("CLIP",),
                 "prompt": ("STRING", {"multiline": True, "dynamicPrompts": True}),
-                "image": ("IMAGE",),
                 "strength": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.05,
                                        "tooltip": "1.0 = full reference detail (layout/pose can leak); lower = keep palette/texture/mood only."}),
             },
             "optional": {
+                "image": ("IMAGE", {"tooltip": "reference image; leave unconnected for a plain Krea 2 text encode"}),
                 "image2": ("IMAGE",),
                 "extract": (["style", "subject"], {"tooltip": "style = palette/lighting/texture; subject = composition/content, prompt controls the look."}),
                 "position": (["before", "after"], {"tooltip": "Vision tokens before or after the prompt. 'after' keeps the prompt image-blind (less content leak)."}),
@@ -153,10 +153,15 @@ class Krea2Moodboard:
     FUNCTION = "encode"
     CATEGORY = "conditioning/krea2"
 
-    def encode(self, clip, prompt, image, strength, image2=None, extract="style", position="before",
+    def encode(self, clip, prompt, strength, image=None, image2=None, extract="style", position="before",
                reference_processing="full", indirect=False, style_directive=True, vision_px=1024):
         images = [img for img in (image, image2) if img is not None]
         images = [img[b:b + 1] for img in images for b in range(img.shape[0])]
+
+        if not images:
+            # no reference connected: behave exactly like a plain Krea 2 text encode
+            tokens = clip.tokenize(prompt, llama_template=KREA2_TEMPLATE)
+            return (clip.encode_from_tokens_scheduled(tokens),)
 
         if reference_processing == "2x2 crops":
             images = _expand_style_crops(images, 2)

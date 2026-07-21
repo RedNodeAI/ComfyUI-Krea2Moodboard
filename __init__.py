@@ -224,7 +224,6 @@ class Krea2MoodboardEncode:
             "required": {
                 "clip": ("CLIP",),
                 "prompt": ("STRING", {"multiline": True, "default": ""}),
-                "images": ("IMAGE", {"tooltip": "reference images (batch them for multiple)"}),
                 "strength": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.05,
                                        "tooltip": "1.0 = raw reference detail; lower = purer extract of the selected aspect"}),
                 "extract": (["style / vibe", "subject / concept"],),
@@ -234,7 +233,10 @@ class Krea2MoodboardEncode:
                 "position": (["before prompt", "after prompt"],),
                 "budget_px": ("INT", {"default": 384, "min": 128, "max": 1536, "step": 64,
                                       "tooltip": "area budget per reference fed to the vision encoder"}),
-            }
+            },
+            "optional": {
+                "images": ("IMAGE", {"tooltip": "reference images (batch them for multiple); leave unconnected for a plain Krea 2 text encode"}),
+            },
         }
 
     RETURN_TYPES = ("CONDITIONING",)
@@ -242,7 +244,11 @@ class Krea2MoodboardEncode:
     CATEGORY = "conditioning/krea2"
     DESCRIPTION = "Moodboard conditioning with all references packed into one vision span. Use standalone (with prompt) or as the fuse_with feeder for Krea 2 Identity Edit (empty prompt)."
 
-    def encode(self, clip, prompt, images, strength, extract, reference_processing, style_directive, indirect, position, budget_px):
+    def encode(self, clip, prompt, strength, extract, reference_processing, style_directive, indirect, position, budget_px, images=None):
+        if images is None or images.shape[0] == 0:
+            # no references connected: behave exactly like a plain Krea 2 text encode
+            tokens = clip.tokenize(prompt, llama_template=KREA2_TEMPLATE)
+            return (clip.encode_from_tokens_scheduled(tokens),)
         refs = [images[i:i + 1] for i in range(images.shape[0])]
         crops_n = 4 if "4x4" in reference_processing else 2 if "2x2" in reference_processing else 0
         total = int(budget_px) * int(budget_px)

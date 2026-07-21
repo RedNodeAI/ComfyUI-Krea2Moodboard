@@ -8,7 +8,8 @@ krea.ai-style **moodboard / vibe transfer** and **identity-preserving editing** 
 
 ### Krea 2 Moodboard
 One-node vibe transfer: prompt + reference image(s) in, conditioning out (replaces `CLIPTextEncode`
-on the positive). Knobs:
+on the positive). The image inputs are optional — with nothing connected it behaves exactly like a
+plain Krea 2 text encode, so you can leave it wired in and just unplug the references. Knobs:
 
 - **strength** — 1.0 = raw reference detail (layout/pose can leak); lower = purer extract. This is an
   *information* knob, not a multiplier (per-token RMSNorms erase plain scaling).
@@ -25,7 +26,8 @@ on the positive). Knobs:
 
 ### Krea 2 Moodboard Encode (packed)
 The multi-reference specialist: all references (or crops) are packed into **ONE vision span** —
-structurally grid-safe, references blend into a joint vibe. Same knobs. Use it standalone (with a
+structurally grid-safe, references blend into a joint vibe. Same knobs; `images` is optional
+(unconnected = plain Krea 2 text encode). Use it standalone (with a
 prompt) or as the **`fuse_with` feeder** for the identity node (empty prompt, `indirect` OFF —
 fuse_with concatenates a separate encode, so deleted rows would carry no image influence).
 

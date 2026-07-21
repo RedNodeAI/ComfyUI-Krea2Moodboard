@@ -1,31 +1,23 @@
-"""RedNode prompt utilities — a cleaner take on the classic prompt-combine node.
+"""RedNode Prompt Combine — prompt combiner with a JS-powered "+ add textbox" button
+(web/rednode_prompt.js), Power-Lora-Loader style: one node, unlimited boxes.
 
-Two textboxes by default; add more by chaining "Prompt Textbox (add)" nodes into
-`more_parts` (pure-Python packs can't grow widgets dynamically, so extra boxes are
-extra nodes — unlimited). `order` rearranges parts without rewiring: 1-based indices
-over [text_1, text_2, chained...], e.g. "2,1" swaps, "3,1" puts part 3 first and
-appends the rest in natural order. Empty parts are skipped. No help output.
+Two textboxes by default; the button adds text_3, text_4, ... dynamically. `order`
+rearranges parts without rewiring ("2,1", "3,1" — unlisted parts follow in natural
+order). Empty parts are skipped. Separator kept (\n escape supported). No help output.
 """
 
-PARTS_TYPE = "REDNODE_PROMPT_PARTS"
 
+class _FlexText(dict):
+    """Accepts any dynamically-added text_N widget as a valid optional STRING input."""
 
-class RedNodePromptTextbox:
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {"text": ("STRING", {"multiline": True, "default": "", "dynamicPrompts": True})},
-            "optional": {"chain": (PARTS_TYPE, {"tooltip": "previous Prompt Textbox (add) node — chain as many as you need"})},
-        }
+    def __contains__(self, key):
+        return True
 
-    RETURN_TYPES = (PARTS_TYPE,)
-    RETURN_NAMES = ("parts",)
-    FUNCTION = "add"
-    CATEGORY = "conditioning/krea2"
-    DESCRIPTION = "One extra textbox for RedNode Prompt Combine; chain several for more."
+    def __getitem__(self, key):
+        return ("STRING", {"multiline": True, "default": ""})
 
-    def add(self, text, chain=None):
-        return ((list(chain) if chain else []) + [text],)
+    def get(self, key, default=None):
+        return self[key]
 
 
 class RedNodePromptCombine:
@@ -36,21 +28,23 @@ class RedNodePromptCombine:
                 "text_1": ("STRING", {"multiline": True, "default": "", "dynamicPrompts": True}),
                 "text_2": ("STRING", {"multiline": True, "default": "", "dynamicPrompts": True}),
                 "separator": ("STRING", {"default": ", ", "tooltip": "placed between parts; type \\n for a newline"}),
-                "order": ("STRING", {"default": "", "tooltip": "rearrange parts without rewiring: 1-based indices over [text_1, text_2, chained...], e.g. '2,1' or '3,1'. Unlisted parts follow in natural order. Empty = natural order."}),
+                "order": ("STRING", {"default": "", "tooltip": "rearrange parts without rewiring: 1-based indices, e.g. '2,1' or '3,1'. Unlisted parts follow in natural order. Empty = natural order."}),
             },
-            "optional": {
-                "more_parts": (PARTS_TYPE, {"tooltip": "chain of Prompt Textbox (add) nodes — parts 3, 4, 5..."}),
-            },
+            "optional": _FlexText(),
         }
 
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("prompt",)
     FUNCTION = "combine"
     CATEGORY = "conditioning/krea2"
-    DESCRIPTION = "Combine prompt parts with a separator. Two boxes by default, unlimited via chained textboxes, reorderable via the order field."
+    DESCRIPTION = "Combine prompt parts with a separator. Two boxes by default, '+ add textbox' for more, reorderable via the order field."
 
-    def combine(self, text_1, text_2, separator=", ", order="", more_parts=None):
-        parts = [text_1, text_2] + (list(more_parts) if more_parts else [])
+    def combine(self, text_1, text_2, separator=", ", order="", **kwargs):
+        extras = sorted(
+            ((int(k.split("_")[1]), v) for k, v in kwargs.items()
+             if isinstance(v, str) and k.startswith("text_") and k.split("_")[1].isdigit()),
+            key=lambda t: t[0])
+        parts = [text_1, text_2] + [v for _, v in extras]
 
         if order.strip():
             try:
@@ -61,19 +55,11 @@ class RedNodePromptCombine:
             if bad:
                 raise ValueError(
                     f"RedNode Prompt Combine: 'order' references part {bad[0]} but only {len(parts)} part(s) exist")
-            picked = [parts[i - 1] for i in idx]
-            picked += [p for n, p in enumerate(parts, 1) if n not in idx]
-            parts = picked
+            parts = [parts[i - 1] for i in idx] + [p for n, p in enumerate(parts, 1) if n not in idx]
 
         sep = separator.replace("\\n", "\n")
         return (sep.join(p.strip() for p in parts if p and p.strip()),)
 
 
-NODE_CLASS_MAPPINGS = {
-    "RedNodePromptCombine": RedNodePromptCombine,
-    "RedNodePromptTextbox": RedNodePromptTextbox,
-}
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "RedNodePromptCombine": "RedNode Prompt Combine",
-    "RedNodePromptTextbox": "RedNode Prompt Textbox (add)",
-}
+NODE_CLASS_MAPPINGS = {"RedNodePromptCombine": RedNodePromptCombine}
+NODE_DISPLAY_NAME_MAPPINGS = {"RedNodePromptCombine": "RedNode Prompt Combine"}

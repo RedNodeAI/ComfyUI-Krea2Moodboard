@@ -225,6 +225,12 @@ def _krea2_forward(self, x, timesteps, context, attention_mask=None, transformer
 
     attn_bias = None
     if src_imgs and any(b != 1.0 for b in ref_boosts):
+        L = txtlen + srclen + imglen
+        est_mb = L * L * combined.element_size() // (1024 * 1024)
+        if est_mb > 256:
+            _warn_once(("boost-vram", L),
+                       f"[Krea2 Identity Edit] ref_boost builds a {est_mb} MB attention bias at this "
+                       f"resolution ({L} tokens). If you hit OOM, lower the resolution or set ref_boost 1.0.")
         attn_bias = _ref_attn_bias(ref_boosts, txtlen, [si.shape[1] for si in src_imgs], imglen,
                                    combined.device, combined.dtype)
 
@@ -278,9 +284,9 @@ class Krea2IdentityEdit:
                                          "tooltip": "Cap on the longest side fed to Qwen3-VL (the identity LoRA trained with 384-768px). 0 = never resize."}),
                 "fuse_with": ("CONDITIONING", {"tooltip": "Optional conditioning to fuse in front of this one (e.g. Krea 2 Moodboard for scene/style vibe). Its token rows are prepended; this node's identity reference latents are kept. Matches the Neo moodboard+edit fusion layout."}),
                 "sources": ("KREA2_SOURCES", {"tooltip": "chained sources (Krea2 Edit Source Chain) — appended after image/image2 as frames 3..N. 3+ refs is beyond the LoRA's training; identities may blend."}),
-                "ref_boost": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1000.0, "step": 0.01, "round": 0.001,
+                "ref_boost": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 10.0, "step": 0.05, "round": 0.001,
                                         "tooltip": "reference-fidelity dial: multiplies target->reference attention. Applies to the LAST ref (the subject in two-ref workflows, the only ref in single-ref). 1.0 = off; >1 pulls harder toward the reference's appearance (the v1.2 edit-LoRA author suggests 2-6); <1 loosens. Set on the POSITIVE node; leave the negative at 1.0."}),
-                "ref_boost_a": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1000.0, "step": 0.01, "round": 0.001,
+                "ref_boost_a": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 10.0, "step": 0.05, "round": 0.001,
                                           "tooltip": "same dial for the earlier refs (the scene in two-ref workflows). No effect in single-ref workflows. 1.0 = off"}),
                 "target_latent": ("LATENT", {"tooltip": "connect your (empty) sampling latent to enable the v1.2 'fit' geometry: refs are fitted in PIXEL space to the output resolution before VAE-encoding — fixes blur from resolution mismatch and removes the match-the-aspect-ratio requirement. With CFG > 1, connect it to the negative edit node too so both passes share one geometry."}),
                 "fit_mode": (["fit", "crop (legacy)"], {"default": "fit",
@@ -296,6 +302,16 @@ class Krea2IdentityEdit:
                ref_boost=1.0, ref_boost_a=1.0, target_latent=None, fit_mode="fit"):
         all_sources = [image, image2] + (list(sources) if sources else [])
         n_refs = sum(1 for s in all_sources if s is not None)
+        if n_refs and vae is None:
+            raise ValueError(
+                "Krea 2 Identity Edit: connect the 'vae' input (your Krea 2 / qwen_image VAE). It encodes the "
+                "source image into the in-context identity latents - without it there is no identity "
+                "preservation, only text grounding.")
+        if n_refs == 0:
+            if target_latent is not None:
+                print("[Krea2 Identity Edit] note: target_latent has no effect without a source image")
+            if ref_boost != 1.0 or ref_boost_a != 1.0:
+                print("[Krea2 Identity Edit] note: ref_boost has no effect without a source image")
         if n_refs > 2:
             print(f"[Krea2 Identity Edit] {n_refs} references - the edit LoRA trained on 1-2; expect identity blending beyond that")
         images_vl = []
@@ -304,6 +320,9 @@ class Krea2IdentityEdit:
         for img in all_sources:
             if img is None:
                 continue
+            if img.shape[0] > 1:
+                print(f"[Krea2 Identity Edit] input batch of {img.shape[0]} - using frame 1 (identity refs are single images; batch the moodboard input for multiple style refs)")
+            img = img[:1]
             samples = img.movedim(-1, 1)
             h, w = samples.shape[2], samples.shape[3]
             if grounding_px and max(h, w) > grounding_px:
@@ -326,7 +345,16 @@ class Krea2IdentityEdit:
             vision_prompt += VISION_BLOCK
 
         print(f"[Krea2 Identity Edit] encoding ({len(images_vl)} ref(s)): {(vision_prompt + prompt)[:120]!r}")
-        tokens = clip.tokenize(vision_prompt + prompt, images=images_vl, llama_template=KREA2_TEMPLATE)
+        try:
+            tokens = clip.tokenize(vision_prompt + prompt, images=images_vl, llama_template=KREA2_TEMPLATE)
+        except Exception as e:
+            raise ValueError(
+                "Krea 2 Identity Edit: this CLIP cannot encode Krea 2 image prompts. Load the qwen3vl_4b "
+                f"(vision) text encoder with CLIPLoader type 'krea2'. (inner error: {e})") from e
+        if "qwen3vl_4b" not in tokens:
+            raise ValueError(
+                "Krea 2 Identity Edit: wrong text-encoder type - load the qwen3vl_4b text encoder with "
+                f"CLIPLoader type 'krea2' (this CLIP produced: {', '.join(tokens)})")
         conditioning = clip.encode_from_tokens_scheduled(tokens)
         if ref_latents:
             extra = {"reference_latents": ref_latents,
@@ -344,6 +372,8 @@ class Krea2IdentityEdit:
             # ("<|im_end|>\n<|im_start|>assistant\n" = 5 rows) — keeping it would put a
             # description boundary mid-sequence, which K2 can read as a SECOND subject being
             # described (two-people outputs). Trim it so the fusion reads as one description.
+            if len(fuse_with) > 1:
+                print("[Krea2 Identity Edit] fuse_with carries scheduled segments - only the first is fused")
             f_cond = fuse_with[0][0]
             if f_cond.shape[1] > 5:
                 f_cond = f_cond[:, :-5]

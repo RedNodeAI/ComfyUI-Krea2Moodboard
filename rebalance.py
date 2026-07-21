@@ -79,6 +79,13 @@ class Krea2Rebalance:
 
     def rebalance(self, conditioning, preset="balanced", per_layer_weights="", multiplier=1.0, renormalize=True):
         weights = _parse_weights(per_layer_weights) if preset == "custom" else PRESET_WEIGHTS[preset]
-        out = [[_scale_tensor(cond, multiplier, weights, renormalize), dict(extras)]
-               for cond, extras in conditioning]
+        out = []
+        for cond, extras in conditioning:
+            # Krea 2's stack is exactly 12 taps; a different custom count would silently reshape
+            # into meaningless "bands" — reject instead.
+            if cond.shape[-1] == 12 * 2560 and len(weights) != 12:
+                raise ValueError(
+                    f"Krea 2 Conditioning Rebalance: Krea 2 has 12 conditioning taps - provide exactly 12 "
+                    f"comma-separated weights (got {len(weights)})")
+            out.append([_scale_tensor(cond, multiplier, weights, renormalize), dict(extras)])
         return (out,)

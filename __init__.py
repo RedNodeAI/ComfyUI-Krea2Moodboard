@@ -64,6 +64,9 @@ def _packed_preprocess_embed(self, embed, device):
         if deepstack_all and deepstack_all[0] is not None:
             deepstack = [torch.cat([ds[i] for ds in deepstack_all], dim=0) for i in range(len(deepstack_all[0]))]
         _SPAN_SIZES.append(merged.shape[0])
+        # grid is reported as grids[0] deliberately: ComfyUI's CONDITIONING path is splice-only —
+        # positions are sequential 1D and the grid metadata is never consumed (it matters only in
+        # the generate() path). Row counts for span math come from _SPAN_SIZES, not the grid.
         return merged, {"grid": grids[0], "deepstack": deepstack, "packed": True}
 
     merged, extra = _orig_preprocess(self, embed, device)
@@ -335,9 +338,9 @@ class Krea2MoodboardIdentityFusion:
                 "vae": ("VAE", {"tooltip": "connect to attach the in-context identity latents (required for actual editing)"}),
                 "edit_source2": ("IMAGE", {"tooltip": "2nd reference for two-ref LoRAs (scene first, subject second)"}),
                 "sources": ("KREA2_SOURCES", {"tooltip": "chained sources (Krea2 Edit Source Chain) — appended after edit_source/edit_source2 as frames 3..N. 3+ refs is beyond the LoRA's training; identities may blend."}),
-                "ref_boost": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1000.0, "step": 0.01, "round": 0.001,
+                "ref_boost": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 10.0, "step": 0.05, "round": 0.001,
                                         "tooltip": "reference-fidelity dial: multiplies target->reference attention for the LAST identity ref (the subject). 1.0 = off; >1 pulls harder toward the reference (the v1.2 edit-LoRA author suggests 2-6). Positive only — the moodboard span is unaffected."}),
-                "ref_boost_a": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1000.0, "step": 0.01, "round": 0.001,
+                "ref_boost_a": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 10.0, "step": 0.05, "round": 0.001,
                                           "tooltip": "same dial for the earlier identity refs (the scene in two-ref workflows). No effect single-ref. 1.0 = off"}),
                 "target_latent": ("LATENT", {"tooltip": "connect your (empty) sampling latent to enable the v1.2 'fit' geometry: identity refs are fitted in PIXEL space to the output resolution before VAE-encoding — fixes blur from resolution mismatch and removes the match-the-aspect-ratio requirement. With CFG > 1, connect the same latent to the negative edit node too."}),
                 "fit_mode": (["fit", "crop (legacy)"], {"default": "fit",
@@ -375,6 +378,15 @@ class Krea2MoodboardIdentityFusion:
         # then chained sources as frames 3..N)
         all_sources = [edit_source, edit_source2] + (list(sources) if sources else [])
         n_refs = sum(1 for s in all_sources if s is not None)
+        if n_refs and vae is None:
+            raise ValueError(
+                "Krea 2 Fusion: connect the 'vae' input (your Krea 2 / qwen_image VAE). It encodes the edit "
+                "source into the in-context identity latents - without it there is no identity preservation.")
+        if n_refs == 0:
+            if target_latent is not None:
+                print("[Krea2 Fusion] note: target_latent has no effect without an edit source")
+            if ref_boost != 1.0 or ref_boost_a != 1.0:
+                print("[Krea2 Fusion] note: ref_boost has no effect without an edit source")
         if n_refs > 2:
             print(f"[Krea2 Fusion] {n_refs} identity references - the edit LoRA trained on 1-2; expect identity blending beyond that")
         edit_images = []
@@ -383,6 +395,8 @@ class Krea2MoodboardIdentityFusion:
         for img in all_sources:
             if img is None:
                 continue
+            if img.shape[0] > 1:
+                print(f"[Krea2 Fusion] edit-source batch of {img.shape[0]} - using frame 1 (batch the moodboard_images input for multiple style refs)")
             samples = img[:1].movedim(-1, 1)
             h, w = samples.shape[2], samples.shape[3]
             if grounding_px and max(h, w) > grounding_px:
@@ -415,7 +429,18 @@ class Krea2MoodboardIdentityFusion:
         print(f"[Krea2 Fusion] encoding ({len(refs)} mb ref(s), {len(edit_images)} edit ref(s)): {text[:120]!r}")
         set_flags(clip, strength=float(strength), hide=bool(indirect), extract=extract_key, span_limit=span_limit)
         try:
-            tokens = clip.tokenize(text, images=images, llama_template=KREA2_TEMPLATE) if images else clip.tokenize(text, llama_template=KREA2_TEMPLATE)
+            try:
+                tokens = clip.tokenize(text, images=images, llama_template=KREA2_TEMPLATE) if images else clip.tokenize(text, llama_template=KREA2_TEMPLATE)
+            except ValueError:
+                raise
+            except Exception as e:
+                raise ValueError(
+                    "Krea 2 Fusion: this CLIP cannot encode Krea 2 image prompts. Load the qwen3vl_4b "
+                    f"(vision) text encoder with CLIPLoader type 'krea2'. (inner error: {e})") from e
+            if "qwen3vl_4b" not in tokens:
+                raise ValueError(
+                    "Krea 2 Fusion: wrong text-encoder type - load the qwen3vl_4b text encoder with "
+                    f"CLIPLoader type 'krea2' (this CLIP produced: {', '.join(tokens)})")
             conditioning = clip.encode_from_tokens_scheduled(tokens)
         finally:
             set_flags(clip)
@@ -430,7 +455,15 @@ class Krea2MoodboardIdentityFusion:
         return (conditioning,)
 
 
+from .rednode import Krea2RedNode, Krea2RedNodeSettings  # noqa: E402  (needs the fusion class above)
+from .prompt_tools import RedNodePromptCombine  # noqa: E402
+
+WEB_DIRECTORY = "./web"
+
 NODE_CLASS_MAPPINGS = {
+    "Krea2RedNode": Krea2RedNode,
+    "Krea2RedNodeSettings": Krea2RedNodeSettings,
+    "RedNodePromptCombine": RedNodePromptCombine,
     "Krea2Moodboard": Krea2Moodboard,
     "Krea2MoodboardEncode": Krea2MoodboardEncode,
     "Krea2IdentityEdit": Krea2IdentityEdit,
@@ -439,6 +472,9 @@ NODE_CLASS_MAPPINGS = {
     "Krea2Rebalance": Krea2Rebalance,
 }
 NODE_DISPLAY_NAME_MAPPINGS = {
+    "Krea2RedNode": "Krea 2 RedNode (Moodboard + Identity)",
+    "Krea2RedNodeSettings": "Krea 2 RedNode Settings (Advanced)",
+    "RedNodePromptCombine": "RedNode Prompt Combine",
     "Krea2Moodboard": "Krea 2 Moodboard",
     "Krea2MoodboardEncode": "Krea 2 Moodboard Encode (packed)",
     "Krea2IdentityEdit": "Krea 2 Identity Edit",

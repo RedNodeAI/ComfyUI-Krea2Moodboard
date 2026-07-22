@@ -1,0 +1,10 @@
+[project]
+name = "rednode-krea2"
+description = "RedNode Krea 2 — moodboard vibe transfer, identity-preserving editing, fusion, conditioning rebalance and prompt tools for the open Krea 2 model."
+version = "1.3.0"
+license = { text = "GPL-3.0" }
+
+[tool.comfy]
+PublisherId = "rednodeai"
+DisplayName = "RedNode Krea 2"
+Icon = ""

@@ -31,6 +31,16 @@ the nodes unused and every patched path is bit-identical to stock ComfyUI.
 
 ## Nodes
 
+### Krea 2 RedNode (Moodboard + Identity) — start here
+The simple front door: `subject_image` (the face to keep), optional `scene_image` (two-ref order
+handled for you), `moodboard_style` references, your instruction, and a **preset** (balanced /
+max identity / style only). Outputs **positive AND matched grounded negative** — same sources, same
+VAE, same fit geometry by construction, so the classic wiring mistakes can't happen. Connect
+`output_latent` to your sampling latent for the v1.2 blur-proof geometry. For full manual control,
+plug a **Krea 2 RedNode Settings (Advanced)** node into `settings` — it replaces the preset
+entirely and names every dial in plain language (technical terms in the tooltips). The nodes below
+remain as advanced/legacy building blocks.
+
 ### Krea 2 Moodboard
 One-node vibe transfer: prompt + reference image(s) in, conditioning out (replaces `CLIPTextEncode`
 on the positive). The image inputs are optional — with nothing connected it behaves exactly like a
@@ -122,8 +132,10 @@ Both basic examples run the positive through **Krea 2 Conditioning Rebalance** (
 renormalized — set preset to `uniform` to bypass), and the fusion example ships the v1.2 wiring
 (`target_latent` connected, ref_boost dials exposed, v1_2 LoRA).
 
-- `krea2_moodboard_t2i.json` — basic vibe transfer text-to-image
-- `krea2_identity_edit_fusion.json` — identity edit + moodboard style fusion
+- `krea2_rednode_identity.json` — **start here**: identity edit on the RedNode (max identity preset)
+- `krea2_rednode_style_transfer.json` — **start here**: vibe transfer on the RedNode (style only, no LoRA needed)
+- `krea2_moodboard_t2i.json` — basic vibe transfer text-to-image (legacy nodes)
+- `krea2_identity_edit_fusion.json` — identity edit + moodboard style fusion (legacy nodes)
 
 ### Full pipeline: `Krea_Workflow_Public.json` (advanced)
 

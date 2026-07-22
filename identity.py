@@ -154,8 +154,19 @@ def _krea2_extra_conds_shapes(self, **kwargs):
 # are returned. Sources are resized to the target latent size in latent space.
 # --------------------------------------------------------------------------
 
-def _krea2_forward(self, x, timesteps, context, attention_mask=None, transformer_options={}, **kwargs):
-    ref_latents = kwargs.get("ref_latents", None) or []
+def _krea2_forward(self, x, timesteps, context, attention_mask=None, *_drift, transformer_options=None, **kwargs):
+    # ComfyUI signature-drift guard: older cores call (..., attention_mask, transformer_options);
+    # newer cores insert ref_latents positionally: (..., attention_mask, ref_latents,
+    # transformer_options). Accept both so stock Krea 2 generation never breaks on update.
+    native_ref = None
+    drift = list(_drift)
+    if drift and isinstance(drift[-1], dict) and transformer_options is None:
+        transformer_options = drift.pop()
+    if drift:
+        native_ref = drift.pop(0)
+    if transformer_options is None:
+        transformer_options = {}
+    ref_latents = kwargs.get("ref_latents", None) or native_ref or []
     ref_boosts = list(kwargs.get("ref_boosts", None) or [])
     ref_fit = list(kwargs.get("ref_fit", None) or [])
     # Defensive alignment: pad from the LEFT so attached values always map to the LAST refs
